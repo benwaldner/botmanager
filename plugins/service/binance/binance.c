@@ -41,8 +41,8 @@ static const plugin_kv_entry_t bnb_kv_schema[] = {
   // Cap on concurrent symbol subscriptions.
   { "plugin.binance.max_symbols",      KV_UINT32, "128" },
 
-  // Dry-run guard: REST order-placement endpoints are NOT called when
-  // this is non-zero. Default 1 (safe). Phase 2c flips it via admin cmd.
+  // Dry-run guard placeholder. This scaffold does not implement signed,
+  // private, or order-placement endpoints.
   { "plugin.binance.dry_run",          KV_UINT8,  "1" },
 };
 
