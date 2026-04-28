@@ -1,4 +1,4 @@
-# tests/meson.build — placeholder
-# Top-level meson.build references subdir('tests'), so this file must exist.
-# No test executables are wired up yet; add unit-test targets here as the
-# test harness develops.
+# Test targets are added here as the framework grows.
+#
+# Keeping this file present allows the top-level meson.build to include the
+# tests subdir even before dedicated test binaries are introduced.

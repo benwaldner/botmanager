@@ -204,7 +204,6 @@ const plugin_desc_t bm_plugin_desc = {
   .kind            = "binance",
   .provides        = { { .name = "service_binance" } },
   .provides_count  = 1,
-  .requires        = { { 0 } },
   .requires_count  = 0,
   .kv_schema       = bnb_kv_schema,
   .kv_schema_count = sizeof(bnb_kv_schema) / sizeof(bnb_kv_schema[0]),
