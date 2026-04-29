@@ -11,6 +11,7 @@
 
 #include <ctype.h>
 #include <json-c/json.h>
+#include <math.h>
 #include <stdio.h>
 
 typedef struct
@@ -197,6 +198,8 @@ bnb_json_get_required_double_str(struct json_object *obj, const char *key,
 
   value = strtod(text, &end);
   if(end == text || end == NULL || *end != '\0')
+    return(false);
+  if(!isfinite(value))
     return(false);
 
   *out = value;

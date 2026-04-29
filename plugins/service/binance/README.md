@@ -16,7 +16,7 @@ trading or private account access.
 The only Binance paths represented here are public market-data helpers for
 kline stream names, combined-stream wrapper type and symbol-consistency
 validation, fail-closed root/data/k object, event/open/close integer-timestamp,
-string-field, OHLCV, trade-count,
+string-field, finite OHLCV, trade-count,
 and finalized-flag validation, subscribe/unsubscribe payloads, control response
 root-object/id/error-code/error-message/result-list stream parsing,
 supported-interval validation, combined stream URLs, in-memory subscription
@@ -76,7 +76,7 @@ plans. They do not contact Binance.
 
 The focused Binance tests cover:
 
-- public kline frame parsing, root/data/k-object/event/open/close integer-timestamp/string-field/OHLCV/trade-count/finalized-flag validation, supported-interval validation, data/kline symbol validation, and combined-stream type/symbol/interval mismatch rejection;
+- public kline frame parsing, root/data/k-object/event/open/close integer-timestamp/string-field/finite-OHLCV/trade-count/finalized-flag validation, supported-interval validation, data/kline symbol validation, and combined-stream type/symbol/interval mismatch rejection;
 - finalized bar cache upsert/get behavior;
 - subscription add/remove/snapshot behavior;
 - subscribe/unsubscribe/list payload builders;
