@@ -361,3 +361,19 @@ bnb_ws_build_unsubscribe_payload(const char * const *symbols,
   return(bnb_ws_build_stream_method_payload("UNSUBSCRIBE", symbols, symbol_count,
         interval, request_id, out, out_sz));
 }
+
+// Build a public LIST_SUBSCRIPTIONS payload for Binance WebSocket control.
+// returns: true if output fit
+bool
+bnb_ws_build_list_subscriptions_payload(uint32_t request_id, char *out,
+    size_t out_sz)
+{
+  int n;
+
+  if(out == NULL || out_sz == 0)
+    return(false);
+
+  n = snprintf(out, out_sz, "{\"method\":\"LIST_SUBSCRIPTIONS\",\"id\":%u}",
+      request_id);
+  return(n > 0 && (size_t)n < out_sz);
+}

@@ -120,6 +120,12 @@ test_build_stream_and_subscribe_payload(void)
   assert(bnb_ws_build_subscribe_payload(sparse_symbols, 2, "1h", 9, payload, sizeof(payload)));
   assert(strstr(payload, "[,\"") == NULL);
   assert(strstr(payload, "\"ethusdt@kline_1h\"") != NULL);
+
+  assert(bnb_ws_build_list_subscriptions_payload(10, payload, sizeof(payload)));
+  assert(strstr(payload, "\"method\":\"LIST_SUBSCRIPTIONS\"") != NULL);
+  assert(strstr(payload, "\"id\":10") != NULL);
+  assert(!bnb_ws_build_list_subscriptions_payload(10, NULL, sizeof(payload)));
+  assert(!bnb_ws_build_list_subscriptions_payload(10, payload, 0));
 }
 
 static void
