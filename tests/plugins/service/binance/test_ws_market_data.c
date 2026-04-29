@@ -84,6 +84,21 @@ test_rejects_mismatched_combined_stream_frame(void)
 }
 
 static void
+test_rejects_mismatched_data_and_kline_symbol(void)
+{
+  const char *frame =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"ETHUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(!bnb_ws_parse_kline_frame(frame, &bar, NULL, 0));
+}
+
+static void
 test_rejects_invalid_ohlc_kline_frame(void)
 {
   const char *missing_open =
@@ -310,6 +325,7 @@ main(void)
   test_parse_combined_kline_frame();
   test_rejects_non_kline_frame();
   test_rejects_mismatched_combined_stream_frame();
+  test_rejects_mismatched_data_and_kline_symbol();
   test_rejects_invalid_ohlc_kline_frame();
   test_rejects_invalid_kline_time_window();
   test_parse_control_response();
