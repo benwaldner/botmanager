@@ -13,6 +13,29 @@
 #include <json-c/json.h>
 #include <stdio.h>
 
+typedef struct
+{
+  uint32_t seconds;
+  const char *interval;
+} bnb_interval_map_t;
+
+static const bnb_interval_map_t bnb_supported_intervals[] = {
+  { 60, "1m" },
+  { 180, "3m" },
+  { 300, "5m" },
+  { 900, "15m" },
+  { 1800, "30m" },
+  { 3600, "1h" },
+  { 7200, "2h" },
+  { 14400, "4h" },
+  { 21600, "6h" },
+  { 28800, "8h" },
+  { 43200, "12h" },
+  { 86400, "1d" },
+  { 259200, "3d" },
+  { 604800, "1w" },
+};
+
 static bool
 bnb_json_get_obj(struct json_object *obj, const char *key, struct json_object **out)
 {
@@ -126,6 +149,23 @@ bnb_copy_lower(char *dst, size_t dst_sz, const char *src)
   dst[i] = '\0';
 }
 
+static bool
+bnb_interval_is_supported_str(const char *interval)
+{
+  size_t i;
+
+  if(interval == NULL || interval[0] == '\0')
+    return(false);
+
+  for(i = 0; i < sizeof(bnb_supported_intervals) / sizeof(bnb_supported_intervals[0]); i++)
+  {
+    if(strcmp(interval, bnb_supported_intervals[i].interval) == 0)
+      return(true);
+  }
+
+  return(false);
+}
+
 // Parse one Binance combined-stream kline frame into a finalized/partial bar.
 // returns: true on successful parse, false on invalid or unsupported frame
 bool
@@ -183,7 +223,8 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   }
   if(kline_symbol != NULL)
     symbol = kline_symbol;
-  if(symbol == NULL || kline_interval == NULL)
+  if(symbol == NULL || kline_interval == NULL
+      || !bnb_interval_is_supported_str(kline_interval))
   {
     json_object_put(root);
     return(false);
@@ -325,7 +366,8 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
   char lower_symbol[BNB_SYMBOL_SZ];
   int n;
 
-  if(symbol == NULL || interval == NULL || out == NULL || out_sz == 0)
+  if(symbol == NULL || interval == NULL || out == NULL || out_sz == 0
+      || !bnb_interval_is_supported_str(interval))
     return(false);
 
   bnb_copy_lower(lower_symbol, sizeof(lower_symbol), symbol);
@@ -375,6 +417,8 @@ bnb_ws_parse_stream_name(const char *stream, char *symbol, size_t symbol_sz,
     if(!isalnum((unsigned char)src_interval[i]))
       return(false);
   }
+  if(!bnb_interval_is_supported_str(src_interval))
+    return(false);
 
   n = snprintf(interval, interval_sz, "%s", src_interval);
   return(n > 0 && (size_t)n < interval_sz);
@@ -430,29 +474,23 @@ bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz)
 {
   const char *interval = NULL;
   int n;
+  size_t i;
 
   if(out == NULL || out_sz == 0)
     return(false);
 
-  switch(bar_seconds)
+  for(i = 0; i < sizeof(bnb_supported_intervals) / sizeof(bnb_supported_intervals[0]); i++)
   {
-    case 60:     interval = "1m"; break;
-    case 180:    interval = "3m"; break;
-    case 300:    interval = "5m"; break;
-    case 900:    interval = "15m"; break;
-    case 1800:   interval = "30m"; break;
-    case 3600:   interval = "1h"; break;
-    case 7200:   interval = "2h"; break;
-    case 14400:  interval = "4h"; break;
-    case 21600:  interval = "6h"; break;
-    case 28800:  interval = "8h"; break;
-    case 43200:  interval = "12h"; break;
-    case 86400:  interval = "1d"; break;
-    case 259200: interval = "3d"; break;
-    case 604800: interval = "1w"; break;
-    default:
-      out[0] = '\0';
-      return(false);
+    if(bnb_supported_intervals[i].seconds == bar_seconds)
+    {
+      interval = bnb_supported_intervals[i].interval;
+      break;
+    }
+  }
+  if(interval == NULL)
+  {
+    out[0] = '\0';
+    return(false);
   }
 
   n = snprintf(out, out_sz, "%s", interval);

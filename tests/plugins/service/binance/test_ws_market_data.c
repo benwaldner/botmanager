@@ -169,6 +169,21 @@ test_rejects_invalid_kline_time_window(void)
 }
 
 static void
+test_rejects_unsupported_kline_interval(void)
+{
+  const char *frame =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"2m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(!bnb_ws_parse_kline_frame(frame, &bar, NULL, 0));
+}
+
+static void
 test_parse_control_response(void)
 {
   bnb_ws_control_response_t response;
@@ -216,6 +231,7 @@ test_build_stream_and_subscribe_payload(void)
 
   assert(bnb_ws_build_stream_name("SOLUSDT", "5m", stream, sizeof(stream)));
   assert(strcmp(stream, "solusdt@kline_5m") == 0);
+  assert(!bnb_ws_build_stream_name("SOLUSDT", "2m", stream, sizeof(stream)));
 
   assert(bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
         url, sizeof(url)));
@@ -228,6 +244,8 @@ test_build_stream_and_subscribe_payload(void)
   assert(strstr(url, "ethusdt@kline_1h") != NULL);
   assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, sparse_symbols, 1, "1h",
         url, sizeof(url)));
+  assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "2m",
+        url, sizeof(url)));
   assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
         tiny_url, sizeof(tiny_url)));
 
@@ -236,12 +254,16 @@ test_build_stream_and_subscribe_payload(void)
   assert(strstr(payload, "\"solusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"btcusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"id\":7") != NULL);
+  assert(!bnb_ws_build_subscribe_payload(symbols, 2, "2m", 7,
+        payload, sizeof(payload)));
 
   assert(bnb_ws_build_unsubscribe_payload(symbols, 2, "15m", 8, payload, sizeof(payload)));
   assert(strstr(payload, "\"method\":\"UNSUBSCRIBE\"") != NULL);
   assert(strstr(payload, "\"solusdt@kline_15m\"") != NULL);
   assert(strstr(payload, "\"btcusdt@kline_15m\"") != NULL);
   assert(strstr(payload, "\"id\":8") != NULL);
+  assert(!bnb_ws_build_unsubscribe_payload(symbols, 2, "2m", 8,
+        payload, sizeof(payload)));
 
   assert(bnb_ws_build_subscribe_payload(sparse_symbols, 2, "1h", 9, payload, sizeof(payload)));
   assert(strstr(payload, "[,\"") == NULL);
@@ -277,6 +299,8 @@ test_parse_stream_name(void)
   assert(!bnb_ws_parse_stream_name("solusdt@ticker",
         symbol, sizeof(symbol), interval, sizeof(interval)));
   assert(!bnb_ws_parse_stream_name("solusdt@kline_",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(!bnb_ws_parse_stream_name("solusdt@kline_2m",
         symbol, sizeof(symbol), interval, sizeof(interval)));
   assert(!bnb_ws_parse_stream_name("solusdt@kline_5m",
         tiny_symbol, sizeof(tiny_symbol), interval, sizeof(interval)));
@@ -328,6 +352,7 @@ main(void)
   test_rejects_mismatched_data_and_kline_symbol();
   test_rejects_invalid_ohlc_kline_frame();
   test_rejects_invalid_kline_time_window();
+  test_rejects_unsupported_kline_interval();
   test_parse_control_response();
   test_build_stream_and_subscribe_payload();
   test_parse_stream_name();

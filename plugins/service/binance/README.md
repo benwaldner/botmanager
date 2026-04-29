@@ -16,9 +16,9 @@ trading or private account access.
 The only Binance paths represented here are public market-data helpers for
 kline stream names, combined-stream wrapper and symbol-consistency validation,
 fail-closed timestamp and OHLCV field validation, subscribe/unsubscribe
-payloads, control response parsing, combined stream URLs, in-memory
-subscription state, finalized bar cache, and offline reconnect backoff
-calculation.
+payloads, control response parsing, supported-interval validation, combined
+stream URLs, in-memory subscription state, finalized bar cache, and offline
+reconnect backoff calculation.
 
 ## Configuration
 
@@ -54,7 +54,8 @@ Supported `bar_seconds` mappings are intentionally explicit:
 | `259200` | `3d` |
 | `604800` | `1w` |
 
-Unsupported intervals fail closed.
+Unsupported intervals fail closed in both configuration-derived planning and
+raw public WebSocket parser/build helpers.
 
 ## Admin commands
 
@@ -73,7 +74,7 @@ plans. They do not contact Binance.
 
 The focused Binance tests cover:
 
-- public kline frame parsing, timestamp/OHLCV validation, data/kline symbol validation, and combined-stream symbol/interval mismatch rejection;
+- public kline frame parsing, timestamp/OHLCV validation, supported-interval validation, data/kline symbol validation, and combined-stream symbol/interval mismatch rejection;
 - finalized bar cache upsert/get behavior;
 - subscription add/remove/snapshot behavior;
 - subscribe/unsubscribe/list payload builders;
