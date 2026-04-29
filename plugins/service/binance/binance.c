@@ -1,20 +1,19 @@
 // =======================================================================
-// Binance service plugin (scaffold — Phase 2a).
+// Binance service plugin (market-data scaffold — Phase 2b).
 //
 // Provides:
-//   - REST + WebSocket connector to Binance Spot (api.binance.com,
-//     stream.binance.com:9443)
-//   - Symbol subscription registry (1m kline aggregated to 5m bars)
-//   - Event publish on bar finalize (consumed by trading bot kind)
+//   - Public Binance Spot market-data plumbing.
+//   - Public kline stream parsing and finalized OHLCV cache helpers.
+//   - Symbol subscription payload preparation.
 //
-// This file is the skeleton: lifecycle, KV schema, admin commands.
-// Network code (REST poll, WS subscribe, bar accumulator) lands in
-// Phase 2b — every TODO marker below points to the next slice of work.
+// This file intentionally does not implement private/signed endpoints,
+// account state, or order placement.
 //
 // Modeled on plugins/service/coinmarketcap/coinmarketcap.c.
 // =======================================================================
 
 #define BNB_INTERNAL
+#define BNB_PLUGIN_MAIN
 #include "binance.h"
 
 #include <stdio.h>
@@ -41,8 +40,8 @@ static const plugin_kv_entry_t bnb_kv_schema[] = {
   // Cap on concurrent symbol subscriptions.
   { "plugin.binance.max_symbols",      KV_UINT32, "128" },
 
-  // Dry-run guard placeholder. This scaffold does not implement signed,
-  // private, or order-placement endpoints.
+  // Dry-run guard placeholder. This scaffold does not implement private
+  // execution endpoints.
   { "plugin.binance.dry_run",          KV_UINT8,  "1" },
 };
 
@@ -58,8 +57,11 @@ static pthread_rwlock_t bnb_subs_rwl;
 // WS pump task handle.
 static task_t         *bnb_ws_task = NULL;
 
+// Latest finalized public market-data bars.
+static bnb_bar_cache_t bnb_bar_cache;
+
 // -----------------------------------------------------------------------
-// Admin commands (skeleton replies — real handlers in 2b)
+// Admin commands
 // -----------------------------------------------------------------------
 
 // !binance status — show subscribed symbols, last bar timestamps, dry_run flag.
@@ -84,9 +86,23 @@ bnb_cmd_status(const cmd_ctx_t *ctx)
 static void
 bnb_cmd_subscribe(const cmd_ctx_t *ctx)
 {
-  // TODO Phase 2b: parse args, uppercase symbol, append to bnb_subs[],
-  // re-arm WS subscription frame.
-  cmd_reply(ctx, "binance subscribe: not yet implemented (Phase 2b)");
+  const char *symbol = NULL;
+  char stream[BNB_STREAM_SZ];
+
+  if(ctx != NULL && ctx->parsed != NULL && ctx->parsed->argc > 0)
+    symbol = ctx->parsed->argv[0];
+
+  if(symbol == NULL || !bnb_ws_build_stream_name(symbol, "5m", stream, sizeof(stream)))
+  {
+    cmd_reply(ctx, "binance subscribe: invalid symbol");
+    return;
+  }
+
+  // Phase 2b remains market-data-only and offline by default. Runtime WS
+  // connection plumbing is intentionally separate from this parser/cache PR.
+  char buf[BNB_REPLY_SZ];
+  snprintf(buf, sizeof(buf), "binance subscribe prepared: %s (market-data only)", stream);
+  cmd_reply(ctx, buf);
 }
 
 // !binance unsubscribe SYMBOL — remove a symbol from the subscription set.
@@ -109,6 +125,7 @@ static bool
 bnb_init(void)
 {
   pthread_rwlock_init(&bnb_subs_rwl, NULL);
+  bnb_bar_cache_init(&bnb_bar_cache);
   memset(bnb_subs, 0, sizeof(bnb_subs));
   bnb_sub_count = 0;
 
@@ -151,25 +168,21 @@ bnb_init(void)
   return(SUCCESS);
 }
 
-// Begin active operation. Phase 2a leaves WS + REST loops dormant —
-// real implementations land in 2b.
+// Begin active operation. Phase 2b still leaves live network loops dormant;
+// parser/cache functions are exercised through offline tests.
 // returns: SUCCESS or FAIL
 static bool
 bnb_start(void)
 {
-  // TODO Phase 2b: open WS connection, subscribe to default symbols
-  // from KV "plugin.binance.symbols", spawn bar-accumulator task, wire
-  // on-finalize event-bus publish.
-  clam(CLAM_INFO, BNB_CTX, "binance start (scaffold no-op — WS pump not yet wired)");
+  clam(CLAM_INFO, BNB_CTX, "binance start (market-data parser/cache only)");
   return(SUCCESS);
 }
 
-// Drain in-flight work. Phase 2a no-op.
+// Drain in-flight work. Phase 2b no-op.
 // returns: SUCCESS or FAIL
 static bool
 bnb_stop(void)
 {
-  // TODO Phase 2b: close WS, flush partial bar, cancel REST inflight.
   if(bnb_ws_task != NULL)
   {
     // task_cancel(bnb_ws_task);
@@ -187,6 +200,7 @@ bnb_deinit(void)
   cmd_unregister("binance.subscribe");
   cmd_unregister("binance.unsubscribe");
 
+  bnb_bar_cache_destroy(&bnb_bar_cache);
   pthread_rwlock_destroy(&bnb_subs_rwl);
 
   clam(CLAM_INFO, BNB_CTX, "binance plugin deinitialized");
