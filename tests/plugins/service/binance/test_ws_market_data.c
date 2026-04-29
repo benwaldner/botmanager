@@ -365,6 +365,12 @@ test_parse_control_response(void)
   assert(response.code == 3);
   assert(strcmp(response.msg, "Bad payload") == 0);
 
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":null,\"id\":\"7\"}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":null,\"id\":-1}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":null,\"id\":7.5}", &response));
   assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
   assert(!bnb_ws_parse_control_response("not-json", &response));
 }
