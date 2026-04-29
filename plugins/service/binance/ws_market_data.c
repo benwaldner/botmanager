@@ -579,6 +579,9 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
   char lower_symbol[BNB_SYMBOL_SZ];
   int n;
 
+  if(out != NULL && out_sz > 0)
+    out[0] = '\0';
+
   if(symbol == NULL || interval == NULL || out == NULL || out_sz == 0
       || !bnb_symbol_is_valid(symbol)
       || !bnb_interval_is_supported_str(interval))

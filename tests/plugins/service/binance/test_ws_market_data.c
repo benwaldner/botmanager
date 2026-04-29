@@ -520,8 +520,13 @@ test_build_stream_and_subscribe_payload(void)
   assert(bnb_ws_build_stream_name("SOLUSDT", "5m", stream, sizeof(stream)));
   assert(strcmp(stream, "solusdt@kline_5m") == 0);
   assert(!bnb_ws_build_stream_name("SOL-USDT", "5m", stream, sizeof(stream)));
+  assert(stream[0] == '\0');
+  snprintf(stream, sizeof(stream), "%s", "stale");
   assert(!bnb_ws_build_stream_name("SOL USDT", "5m", stream, sizeof(stream)));
+  assert(stream[0] == '\0');
+  snprintf(stream, sizeof(stream), "%s", "stale");
   assert(!bnb_ws_build_stream_name("SOLUSDT", "2m", stream, sizeof(stream)));
+  assert(stream[0] == '\0');
 
   assert(bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
         url, sizeof(url)));
