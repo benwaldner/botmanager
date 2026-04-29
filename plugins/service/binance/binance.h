@@ -161,6 +161,8 @@ bool bnb_ws_build_combined_stream_url(const char *base_url,
 bool bnb_ws_build_stream_name(const char *symbol, const char *interval,
     char *out, size_t out_sz);
 bool bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz);
+bool bnb_ws_reconnect_backoff_ms(uint32_t base_ms, uint32_t attempt,
+    uint32_t cap_ms, uint32_t *out_ms);
 
 void bnb_bar_cache_init(bnb_bar_cache_t *cache);
 void bnb_bar_cache_destroy(bnb_bar_cache_t *cache);
