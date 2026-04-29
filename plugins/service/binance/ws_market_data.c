@@ -589,7 +589,12 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
 
   bnb_copy_lower(lower_symbol, sizeof(lower_symbol), symbol);
   n = snprintf(out, out_sz, "%s@kline_%s", lower_symbol, interval);
-  return(n > 0 && (size_t)n < out_sz);
+  if(n <= 0 || (size_t)n >= out_sz)
+  {
+    out[0] = '\0';
+    return(false);
+  }
+  return(true);
 }
 
 // Parse one stream name such as "solusdt@kline_5m".
@@ -658,9 +663,13 @@ bnb_ws_build_combined_stream_url(const char *base_url,
       || out == NULL || out_sz == 0)
     return(false);
 
+  out[0] = '\0';
   n = snprintf(out, out_sz, "%s?streams=", base_url);
   if(n < 0 || (size_t)n >= out_sz)
+  {
+    out[0] = '\0';
     return(false);
+  }
   used = (size_t)n;
 
   for(i = 0; i < symbol_count; i++)
@@ -670,18 +679,29 @@ bnb_ws_build_combined_stream_url(const char *base_url,
     if(symbols[i] == NULL || symbols[i][0] == '\0')
       continue;
     if(!bnb_ws_build_stream_name(symbols[i], interval, stream, sizeof(stream)))
+    {
+      out[0] = '\0';
       return(false);
+    }
 
     n = snprintf(out + used, out_sz - used, "%s%s",
         stream_count == 0 ? "" : "/",
         stream);
     if(n < 0 || (size_t)n >= out_sz - used)
+    {
+      out[0] = '\0';
       return(false);
+    }
     used += (size_t)n;
     stream_count++;
   }
 
-  return(stream_count > 0);
+  if(stream_count == 0)
+  {
+    out[0] = '\0';
+    return(false);
+  }
+  return(true);
 }
 
 // Convert configured bar size to a Binance public kline interval.
@@ -728,9 +748,13 @@ bnb_ws_build_stream_method_payload(const char *method, const char * const *symbo
       || out == NULL || out_sz == 0)
     return(false);
 
+  out[0] = '\0';
   n = snprintf(out, out_sz, "{\"method\":\"%s\",\"params\":[", method);
   if(n < 0 || (size_t)n >= out_sz)
+  {
+    out[0] = '\0';
     return(false);
+  }
   used = (size_t)n;
 
   for(i = 0; i < symbol_count; i++)
@@ -739,20 +763,34 @@ bnb_ws_build_stream_method_payload(const char *method, const char * const *symbo
     if(symbols[i] == NULL || symbols[i][0] == '\0')
       continue;
     if(!bnb_ws_build_stream_name(symbols[i], interval, stream, sizeof(stream)))
+    {
+      out[0] = '\0';
       return(false);
+    }
     n = snprintf(out + used, out_sz - used, "%s\"%s\"",
         stream_count == 0 ? "" : ",",
         stream);
     if(n < 0 || (size_t)n >= out_sz - used)
+    {
+      out[0] = '\0';
       return(false);
+    }
     used += (size_t)n;
     stream_count++;
   }
 
   n = snprintf(out + used, out_sz - used, "],\"id\":%u}", request_id);
   if(n < 0 || (size_t)n >= out_sz - used)
+  {
+    out[0] = '\0';
     return(false);
-  return(strstr(out, "@kline_") != NULL);
+  }
+  if(strstr(out, "@kline_") == NULL)
+  {
+    out[0] = '\0';
+    return(false);
+  }
+  return(true);
 }
 
 // Build a public SUBSCRIBE payload for Binance combined streams.
@@ -788,7 +826,13 @@ bnb_ws_build_list_subscriptions_payload(uint32_t request_id, char *out,
   if(out == NULL || out_sz == 0)
     return(false);
 
+  out[0] = '\0';
   n = snprintf(out, out_sz, "{\"method\":\"LIST_SUBSCRIPTIONS\",\"id\":%u}",
       request_id);
-  return(n > 0 && (size_t)n < out_sz);
+  if(n <= 0 || (size_t)n >= out_sz)
+  {
+    out[0] = '\0';
+    return(false);
+  }
+  return(true);
 }
