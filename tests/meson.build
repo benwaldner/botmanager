@@ -2,3 +2,4 @@
 #
 # Keeping this file present allows the top-level meson.build to include the
 # tests subdir even before dedicated test binaries are introduced.
+subdir('plugins')
