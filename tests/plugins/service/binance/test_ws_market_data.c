@@ -519,6 +519,8 @@ test_build_stream_and_subscribe_payload(void)
 
   assert(bnb_ws_build_stream_name("SOLUSDT", "5m", stream, sizeof(stream)));
   assert(strcmp(stream, "solusdt@kline_5m") == 0);
+  assert(!bnb_ws_build_stream_name("SOL-USDT", "5m", stream, sizeof(stream)));
+  assert(!bnb_ws_build_stream_name("SOL USDT", "5m", stream, sizeof(stream)));
   assert(!bnb_ws_build_stream_name("SOLUSDT", "2m", stream, sizeof(stream)));
 
   assert(bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
@@ -534,6 +536,10 @@ test_build_stream_and_subscribe_payload(void)
         url, sizeof(url)));
   assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "2m",
         url, sizeof(url)));
+  sparse_symbols[0] = "BAD-SYMBOL";
+  assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, sparse_symbols, 2, "1h",
+        url, sizeof(url)));
+  sparse_symbols[0] = NULL;
   assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
         tiny_url, sizeof(tiny_url)));
 
@@ -544,6 +550,10 @@ test_build_stream_and_subscribe_payload(void)
   assert(strstr(payload, "\"id\":7") != NULL);
   assert(!bnb_ws_build_subscribe_payload(symbols, 2, "2m", 7,
         payload, sizeof(payload)));
+  sparse_symbols[0] = "BAD SYMBOL";
+  assert(!bnb_ws_build_subscribe_payload(sparse_symbols, 2, "1h", 9,
+        payload, sizeof(payload)));
+  sparse_symbols[0] = NULL;
 
   assert(bnb_ws_build_unsubscribe_payload(symbols, 2, "15m", 8, payload, sizeof(payload)));
   assert(strstr(payload, "\"method\":\"UNSUBSCRIBE\"") != NULL);
