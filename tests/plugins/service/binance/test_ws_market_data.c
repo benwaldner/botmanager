@@ -216,6 +216,46 @@ test_validates_kline_finalized_flag(void)
 }
 
 static void
+test_validates_kline_trade_count(void)
+{
+  const char *zero_trades =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":0,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *missing =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *negative =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":-1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *non_integer =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":\"1\",\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(bnb_ws_parse_kline_frame(zero_trades, &bar, NULL, 0));
+  assert(bar.trade_count == 0);
+  assert(!bnb_ws_parse_kline_frame(missing, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(negative, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(non_integer, &bar, NULL, 0));
+}
+
+static void
 test_parse_control_response(void)
 {
   bnb_ws_control_response_t response;
@@ -386,6 +426,7 @@ main(void)
   test_rejects_invalid_kline_time_window();
   test_rejects_unsupported_kline_interval();
   test_validates_kline_finalized_flag();
+  test_validates_kline_trade_count();
   test_parse_control_response();
   test_build_stream_and_subscribe_payload();
   test_parse_stream_name();
