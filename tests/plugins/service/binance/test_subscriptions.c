@@ -55,11 +55,36 @@ test_build_payload_snapshot(void)
   bnb_subscription_table_destroy(&table);
 }
 
+static void
+test_add_csv_normalizes_and_deduplicates(void)
+{
+  bnb_subscription_table_t table;
+  char payload[BNB_WS_PAYLOAD_SZ];
+
+  bnb_subscription_table_init(&table);
+  assert(bnb_subscription_table_add_csv(&table,
+        " BTCUSDT,ethusdt, BTCUSDT ,,bad/symbol,solusdt ") == 3);
+  assert(bnb_subscription_table_count(&table) == 3);
+  assert(bnb_subscription_table_contains(&table, "BTCUSDT"));
+  assert(bnb_subscription_table_contains(&table, "ETHUSDT"));
+  assert(bnb_subscription_table_contains(&table, "SOLUSDT"));
+  assert(!bnb_subscription_table_contains(&table, "bad/symbol"));
+
+  assert(bnb_subscription_table_build_subscribe_payload(
+        &table, "5m", 12, payload, sizeof(payload)));
+  assert(strstr(payload, "\"btcusdt@kline_5m\"") != NULL);
+  assert(strstr(payload, "\"ethusdt@kline_5m\"") != NULL);
+  assert(strstr(payload, "\"solusdt@kline_5m\"") != NULL);
+
+  bnb_subscription_table_destroy(&table);
+}
+
 int
 main(void)
 {
   test_add_contains_remove();
   test_build_payload_snapshot();
+  test_add_csv_normalizes_and_deduplicates();
   puts("test_subscriptions: ok");
   return(0);
 }

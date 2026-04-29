@@ -130,6 +130,8 @@ uint32_t bnb_bar_cache_count(const bnb_bar_cache_t *cache);
 void bnb_subscription_table_init(bnb_subscription_table_t *table);
 void bnb_subscription_table_destroy(bnb_subscription_table_t *table);
 bool bnb_subscription_table_add(bnb_subscription_table_t *table, const char *symbol);
+uint32_t bnb_subscription_table_add_csv(bnb_subscription_table_t *table,
+    const char *symbols_csv);
 bool bnb_subscription_table_remove(bnb_subscription_table_t *table, const char *symbol);
 bool bnb_subscription_table_contains(const bnb_subscription_table_t *table, const char *symbol);
 uint32_t bnb_subscription_table_count(const bnb_subscription_table_t *table);

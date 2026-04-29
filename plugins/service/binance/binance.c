@@ -132,6 +132,9 @@ bnb_cmd_unsubscribe(const cmd_ctx_t *ctx)
 static bool
 bnb_init(void)
 {
+  uint32_t default_subs = 0;
+  const char *symbols_csv = NULL;
+
   bnb_bar_cache_init(&bnb_bar_cache);
   bnb_subscription_table_init(&bnb_subscriptions);
 
@@ -169,7 +172,11 @@ bnb_init(void)
     return(FAIL);
   }
 
-  clam(CLAM_INFO, BNB_CTX, "binance plugin initialized (scaffold)");
+  symbols_csv = kv_get_str("plugin.binance.symbols");
+  default_subs = bnb_subscription_table_add_csv(&bnb_subscriptions, symbols_csv);
+
+  clam(CLAM_INFO, BNB_CTX, "binance plugin initialized (market-data-only subs=%u)",
+      default_subs);
 
   return(SUCCESS);
 }

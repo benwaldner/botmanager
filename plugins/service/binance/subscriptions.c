@@ -129,6 +129,42 @@ bnb_subscription_table_add(bnb_subscription_table_t *table, const char *symbol)
   return(false);
 }
 
+uint32_t
+bnb_subscription_table_add_csv(bnb_subscription_table_t *table,
+    const char *symbols_csv)
+{
+  char token[BNB_SYMBOL_SZ];
+  uint32_t added = 0;
+  size_t i = 0;
+  size_t n = 0;
+
+  if(table == NULL || symbols_csv == NULL)
+    return(0);
+
+  for(i = 0; ; i++)
+  {
+    char ch = symbols_csv[i];
+    if(ch == ',' || ch == '\0')
+    {
+      uint32_t before_count;
+      token[n] = '\0';
+      before_count = bnb_subscription_table_count(table);
+      if(token[0] != '\0' && bnb_subscription_table_add(table, token)
+          && bnb_subscription_table_count(table) > before_count)
+        added++;
+      n = 0;
+      if(ch == '\0')
+        break;
+      continue;
+    }
+
+    if(n + 1 < sizeof(token))
+      token[n++] = ch;
+  }
+
+  return(added);
+}
+
 bool
 bnb_subscription_table_remove(bnb_subscription_table_t *table, const char *symbol)
 {
