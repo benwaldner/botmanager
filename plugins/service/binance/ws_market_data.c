@@ -217,22 +217,21 @@ bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz)
   return(n > 0 && (size_t)n < out_sz);
 }
 
-// Build a public SUBSCRIBE payload for Binance combined streams.
-// returns: true if output fit and at least one symbol was included
-bool
-bnb_ws_build_subscribe_payload(const char * const *symbols,
+static bool
+bnb_ws_build_stream_method_payload(const char *method, const char * const *symbols,
     uint32_t symbol_count, const char *interval, uint32_t request_id,
     char *out, size_t out_sz)
 {
   size_t used = 0;
   uint32_t i;
+  uint32_t stream_count = 0;
   int n;
 
-  if(symbols == NULL || symbol_count == 0 || interval == NULL
+  if(method == NULL || symbols == NULL || symbol_count == 0 || interval == NULL
       || out == NULL || out_sz == 0)
     return(false);
 
-  n = snprintf(out, out_sz, "{\"method\":\"SUBSCRIBE\",\"params\":[");
+  n = snprintf(out, out_sz, "{\"method\":\"%s\",\"params\":[", method);
   if(n < 0 || (size_t)n >= out_sz)
     return(false);
   used = (size_t)n;
@@ -245,15 +244,38 @@ bnb_ws_build_subscribe_payload(const char * const *symbols,
     if(!bnb_ws_build_stream_name(symbols[i], interval, stream, sizeof(stream)))
       return(false);
     n = snprintf(out + used, out_sz - used, "%s\"%s\"",
-        used > strlen("{\"method\":\"SUBSCRIBE\",\"params\":[") ? "," : "",
+        stream_count == 0 ? "" : ",",
         stream);
     if(n < 0 || (size_t)n >= out_sz - used)
       return(false);
     used += (size_t)n;
+    stream_count++;
   }
 
   n = snprintf(out + used, out_sz - used, "],\"id\":%u}", request_id);
   if(n < 0 || (size_t)n >= out_sz - used)
     return(false);
   return(strstr(out, "@kline_") != NULL);
+}
+
+// Build a public SUBSCRIBE payload for Binance combined streams.
+// returns: true if output fit and at least one symbol was included
+bool
+bnb_ws_build_subscribe_payload(const char * const *symbols,
+    uint32_t symbol_count, const char *interval, uint32_t request_id,
+    char *out, size_t out_sz)
+{
+  return(bnb_ws_build_stream_method_payload("SUBSCRIBE", symbols, symbol_count,
+        interval, request_id, out, out_sz));
+}
+
+// Build a public UNSUBSCRIBE payload for Binance combined streams.
+// returns: true if output fit and at least one symbol was included
+bool
+bnb_ws_build_unsubscribe_payload(const char * const *symbols,
+    uint32_t symbol_count, const char *interval, uint32_t request_id,
+    char *out, size_t out_sz)
+{
+  return(bnb_ws_build_stream_method_payload("UNSUBSCRIBE", symbols, symbol_count,
+        interval, request_id, out, out_sz));
 }
