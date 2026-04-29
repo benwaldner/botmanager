@@ -221,6 +221,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   bnb_copy_upper(out->symbol, sizeof(out->symbol), symbol);
   out->open_time_ms = bnb_json_get_i64(kline, "t");
   out->close_time_ms = bnb_json_get_i64(kline, "T");
+  if(out->open_time_ms <= 0 || out->close_time_ms <= out->open_time_ms)
+  {
+    json_object_put(root);
+    memset(out, 0, sizeof(*out));
+    return(false);
+  }
+
   out->open = open;
   out->high = high;
   out->low = low;
@@ -234,7 +241,7 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     snprintf(interval, interval_sz, "%s", kline_interval);
 
   json_object_put(root);
-  return(out->symbol[0] != '\0' && out->open_time_ms > 0 && out->close_time_ms > 0);
+  return(out->symbol[0] != '\0');
 }
 
 // Parse a public WebSocket control response such as SUBSCRIBE ACK,
