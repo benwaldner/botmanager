@@ -252,6 +252,23 @@ bnb_interval_is_supported_str(const char *interval)
 }
 
 static bool
+bnb_symbol_is_valid(const char *symbol)
+{
+  size_t i;
+
+  if(symbol == NULL || symbol[0] == '\0')
+    return(false);
+
+  for(i = 0; symbol[i] != '\0'; i++)
+  {
+    if(!isalnum((unsigned char)symbol[i]))
+      return(false);
+  }
+
+  return(true);
+}
+
+static bool
 bnb_json_get_required_bool(struct json_object *obj, const char *key, bool *out)
 {
   struct json_object *value = NULL;
@@ -349,6 +366,7 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   if(kline_symbol != NULL)
     symbol = kline_symbol;
   if(symbol == NULL || kline_interval == NULL
+      || !bnb_symbol_is_valid(symbol)
       || !bnb_interval_is_supported_str(kline_interval))
   {
     json_object_put(root);

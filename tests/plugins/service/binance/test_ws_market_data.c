@@ -152,12 +152,36 @@ test_rejects_non_string_kline_metadata(void)
       "\"i\":5,\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
       "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
     "}";
+  const char *empty_kline_symbol =
+    "{"
+    "\"data\":{\"e\":\"kline\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *hyphen_kline_symbol =
+    "{"
+    "\"data\":{\"e\":\"kline\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOL-USDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *space_data_symbol =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOL USDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,"
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
   bnb_bar_t bar;
 
   assert(!bnb_ws_parse_kline_frame(numeric_event, &bar, NULL, 0));
   assert(!bnb_ws_parse_kline_frame(numeric_data_symbol, &bar, NULL, 0));
   assert(!bnb_ws_parse_kline_frame(numeric_kline_symbol, &bar, NULL, 0));
   assert(!bnb_ws_parse_kline_frame(numeric_interval, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(empty_kline_symbol, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(hyphen_kline_symbol, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(space_data_symbol, &bar, NULL, 0));
 }
 
 static void
