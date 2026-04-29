@@ -204,16 +204,32 @@ test_interval_from_bar_seconds(void)
 
   assert(bnb_interval_from_bar_seconds(60, interval, sizeof(interval)));
   assert(strcmp(interval, "1m") == 0);
+  assert(bnb_interval_from_bar_seconds(180, interval, sizeof(interval)));
+  assert(strcmp(interval, "3m") == 0);
   assert(bnb_interval_from_bar_seconds(300, interval, sizeof(interval)));
   assert(strcmp(interval, "5m") == 0);
   assert(bnb_interval_from_bar_seconds(900, interval, sizeof(interval)));
   assert(strcmp(interval, "15m") == 0);
+  assert(bnb_interval_from_bar_seconds(1800, interval, sizeof(interval)));
+  assert(strcmp(interval, "30m") == 0);
   assert(bnb_interval_from_bar_seconds(3600, interval, sizeof(interval)));
   assert(strcmp(interval, "1h") == 0);
+  assert(bnb_interval_from_bar_seconds(7200, interval, sizeof(interval)));
+  assert(strcmp(interval, "2h") == 0);
   assert(bnb_interval_from_bar_seconds(14400, interval, sizeof(interval)));
   assert(strcmp(interval, "4h") == 0);
+  assert(bnb_interval_from_bar_seconds(21600, interval, sizeof(interval)));
+  assert(strcmp(interval, "6h") == 0);
+  assert(bnb_interval_from_bar_seconds(28800, interval, sizeof(interval)));
+  assert(strcmp(interval, "8h") == 0);
+  assert(bnb_interval_from_bar_seconds(43200, interval, sizeof(interval)));
+  assert(strcmp(interval, "12h") == 0);
   assert(bnb_interval_from_bar_seconds(86400, interval, sizeof(interval)));
   assert(strcmp(interval, "1d") == 0);
+  assert(bnb_interval_from_bar_seconds(259200, interval, sizeof(interval)));
+  assert(strcmp(interval, "3d") == 0);
+  assert(bnb_interval_from_bar_seconds(604800, interval, sizeof(interval)));
+  assert(strcmp(interval, "1w") == 0);
   assert(!bnb_interval_from_bar_seconds(120, interval, sizeof(interval)));
   assert(interval[0] == '\0');
 }
