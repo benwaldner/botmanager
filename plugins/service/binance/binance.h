@@ -46,6 +46,7 @@
 #define BNB_STREAM_SZ       64
 #define BNB_WS_PAYLOAD_SZ   2048
 #define BNB_CONTROL_MSG_SZ  192
+#define BNB_WS_BACKOFF_CAP_MS 60000
 
 // 5-minute bar size in seconds.
 #define BNB_BAR_SECONDS     300

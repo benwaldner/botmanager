@@ -36,6 +36,7 @@ static const plugin_kv_entry_t bnb_kv_schema[] = {
 
   // Reconnect backoff for the WS pump, in ms.
   { "plugin.binance.ws_backoff_ms",    KV_UINT32, "1000" },
+  { "plugin.binance.ws_backoff_cap_ms", KV_UINT32, "60000" },
 
   // Cap on concurrent symbol subscriptions.
   { "plugin.binance.max_symbols",      KV_UINT32, "128" },
@@ -187,6 +188,10 @@ bnb_cmd_plan(const cmd_ctx_t *ctx)
   bnb_ws_connection_plan_t plan;
   const char *base_url = kv_get_str("plugin.binance.ws_base");
   uint32_t bar_seconds = (uint32_t)kv_get_uint("plugin.binance.bar_seconds");
+  uint32_t backoff_base_ms = (uint32_t)kv_get_uint("plugin.binance.ws_backoff_ms");
+  uint32_t backoff_cap_ms = (uint32_t)kv_get_uint("plugin.binance.ws_backoff_cap_ms");
+  uint32_t retry0_ms = 0;
+  uint32_t retry1_ms = 0;
   char buf[BNB_REPLY_SZ];
   size_t payload_len;
 
@@ -198,10 +203,20 @@ bnb_cmd_plan(const cmd_ctx_t *ctx)
   }
 
   payload_len = strlen(plan.subscribe_payload);
+  if(!bnb_ws_reconnect_backoff_ms(backoff_base_ms, 0,
+        backoff_cap_ms, &retry0_ms))
+    retry0_ms = BNB_WS_BACKOFF_CAP_MS;
+  if(!bnb_ws_reconnect_backoff_ms(backoff_base_ms, 1,
+        backoff_cap_ms, &retry1_ms))
+    retry1_ms = BNB_WS_BACKOFF_CAP_MS;
+
   snprintf(buf, sizeof(buf),
-      "binance plan: count=%u interval=%s request_id=%u payload_len=%zu url=%.360s%s market-data-only",
+      "binance plan: count=%u interval=%s request_id=%u payload_len=%zu "
+      "backoff_base_ms=%u backoff_cap_ms=%u retry0_ms=%u retry1_ms=%u "
+      "url=%.260s%s market-data-only",
       plan.symbol_count, plan.interval, plan.request_id, payload_len,
-      plan.url, strlen(plan.url) > 360 ? "..." : "");
+      backoff_base_ms, backoff_cap_ms, retry0_ms, retry1_ms,
+      plan.url, strlen(plan.url) > 260 ? "..." : "");
 
   cmd_reply(ctx, buf);
 }
