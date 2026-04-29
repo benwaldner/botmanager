@@ -77,6 +77,14 @@ typedef struct
   pthread_mutex_t mu;
 } bnb_sub_t;
 
+// Fixed-size public market-data subscription registry.
+typedef struct
+{
+  bnb_sub_t subs[BNB_MAX_SYMBOLS];
+  uint32_t  count;
+  pthread_rwlock_t rwl;
+} bnb_subscription_table_t;
+
 // Fixed-size finalized-bar cache for the public market-data path.
 typedef struct
 {
@@ -118,6 +126,16 @@ bool bnb_bar_cache_upsert(bnb_bar_cache_t *cache, const bnb_bar_t *bar);
 bool bnb_bar_cache_get(const bnb_bar_cache_t *cache, const char *symbol,
     bnb_bar_t *out);
 uint32_t bnb_bar_cache_count(const bnb_bar_cache_t *cache);
+
+void bnb_subscription_table_init(bnb_subscription_table_t *table);
+void bnb_subscription_table_destroy(bnb_subscription_table_t *table);
+bool bnb_subscription_table_add(bnb_subscription_table_t *table, const char *symbol);
+bool bnb_subscription_table_remove(bnb_subscription_table_t *table, const char *symbol);
+bool bnb_subscription_table_contains(const bnb_subscription_table_t *table, const char *symbol);
+uint32_t bnb_subscription_table_count(const bnb_subscription_table_t *table);
+bool bnb_subscription_table_build_subscribe_payload(
+    const bnb_subscription_table_t *table, const char *interval,
+    uint32_t request_id, char *out, size_t out_sz);
 
 #endif // BNB_INTERNAL
 
