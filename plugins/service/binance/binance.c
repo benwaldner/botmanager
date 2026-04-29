@@ -129,6 +129,57 @@ bnb_cmd_unsubscribe(const cmd_ctx_t *ctx)
   cmd_reply(ctx, "binance unsubscribe prepared (market-data only)");
 }
 
+// !binance subscriptions — list the active public market-data symbols.
+static void
+bnb_cmd_subscriptions(const cmd_ctx_t *ctx)
+{
+  char symbols[BNB_MAX_SYMBOLS][BNB_SYMBOL_SZ];
+  char buf[BNB_REPLY_SZ];
+  uint32_t count;
+  uint32_t copied;
+  uint32_t i;
+  size_t off;
+  bool truncated = false;
+
+  count = bnb_subscription_table_count(&bnb_subscriptions);
+  copied = bnb_subscription_table_snapshot(&bnb_subscriptions,
+      symbols, BNB_MAX_SYMBOLS);
+
+  off = (size_t)snprintf(buf, sizeof(buf),
+      "binance subscriptions: count=%u symbols=", count);
+
+  if(count == 0)
+  {
+    cmd_reply(ctx, "binance subscriptions: count=0");
+    return;
+  }
+
+  for(i = 0; i < copied; i++)
+  {
+    int n;
+
+    if(off >= sizeof(buf))
+    {
+      truncated = true;
+      break;
+    }
+
+    n = snprintf(buf + off, sizeof(buf) - off, "%s%s",
+        i == 0 ? "" : ",", symbols[i]);
+    if(n < 0 || (size_t)n >= sizeof(buf) - off)
+    {
+      truncated = true;
+      break;
+    }
+    off += (size_t)n;
+  }
+
+  if(truncated && off + 4 < sizeof(buf))
+    snprintf(buf + off, sizeof(buf) - off, ",...");
+
+  cmd_reply(ctx, buf);
+}
+
 // -----------------------------------------------------------------------
 // Plugin lifecycle
 // -----------------------------------------------------------------------
@@ -180,6 +231,20 @@ bnb_init(void)
     return(FAIL);
   }
 
+  if(cmd_register("binance", "binance.subscriptions",
+      "binance subscriptions",
+      "List active binance public market-data subscriptions",
+      NULL,
+      USERNS_GROUP_ADMIN, 0, CMD_SCOPE_ANY, METHOD_T_ANY,
+      bnb_cmd_subscriptions, NULL,
+      NULL, NULL, NULL, 0) != SUCCESS)
+  {
+    cmd_unregister("binance.status");
+    cmd_unregister("binance.subscribe");
+    cmd_unregister("binance.unsubscribe");
+    return(FAIL);
+  }
+
   symbols_csv = kv_get_str("plugin.binance.symbols");
   default_subs = bnb_subscription_table_add_csv(&bnb_subscriptions, symbols_csv);
 
@@ -220,6 +285,7 @@ bnb_deinit(void)
   cmd_unregister("binance.status");
   cmd_unregister("binance.subscribe");
   cmd_unregister("binance.unsubscribe");
+  cmd_unregister("binance.subscriptions");
 
   bnb_bar_cache_destroy(&bnb_bar_cache);
   bnb_subscription_table_destroy(&bnb_subscriptions);

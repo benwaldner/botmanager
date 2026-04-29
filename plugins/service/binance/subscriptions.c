@@ -229,6 +229,29 @@ bnb_subscription_table_count(const bnb_subscription_table_t *table)
   return(count);
 }
 
+uint32_t
+bnb_subscription_table_snapshot(const bnb_subscription_table_t *table,
+    char symbols[][BNB_SYMBOL_SZ], uint32_t max_symbols)
+{
+  uint32_t i;
+  uint32_t count = 0;
+  bnb_subscription_table_t *mutable_table = (bnb_subscription_table_t *)table;
+
+  if(table == NULL || symbols == NULL || max_symbols == 0)
+    return(0);
+
+  pthread_rwlock_rdlock(&mutable_table->rwl);
+  for(i = 0; i < BNB_MAX_SYMBOLS && count < max_symbols; i++)
+  {
+    if(table->subs[i].symbol[0] == '\0')
+      continue;
+    snprintf(symbols[count], BNB_SYMBOL_SZ, "%s", table->subs[i].symbol);
+    count++;
+  }
+  pthread_rwlock_unlock(&mutable_table->rwl);
+  return(count);
+}
+
 bool
 bnb_subscription_table_update_bar(bnb_subscription_table_t *table,
     const bnb_bar_t *bar)
