@@ -181,6 +181,42 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
   return(n > 0 && (size_t)n < out_sz);
 }
 
+// Convert configured bar size to a Binance public kline interval.
+// returns: true for supported intervals, false for unsupported values
+bool
+bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz)
+{
+  const char *interval = NULL;
+  int n;
+
+  if(out == NULL || out_sz == 0)
+    return(false);
+
+  switch(bar_seconds)
+  {
+    case 60:     interval = "1m"; break;
+    case 180:    interval = "3m"; break;
+    case 300:    interval = "5m"; break;
+    case 900:    interval = "15m"; break;
+    case 1800:   interval = "30m"; break;
+    case 3600:   interval = "1h"; break;
+    case 7200:   interval = "2h"; break;
+    case 14400:  interval = "4h"; break;
+    case 21600:  interval = "6h"; break;
+    case 28800:  interval = "8h"; break;
+    case 43200:  interval = "12h"; break;
+    case 86400:  interval = "1d"; break;
+    case 259200: interval = "3d"; break;
+    case 604800: interval = "1w"; break;
+    default:
+      out[0] = '\0';
+      return(false);
+  }
+
+  n = snprintf(out, out_sz, "%s", interval);
+  return(n > 0 && (size_t)n < out_sz);
+}
+
 // Build a public SUBSCRIBE payload for Binance combined streams.
 // returns: true if output fit and at least one symbol was included
 bool

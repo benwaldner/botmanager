@@ -84,13 +84,21 @@ static void
 bnb_cmd_subscribe(const cmd_ctx_t *ctx)
 {
   const char *symbol = NULL;
+  char interval[BNB_INTERVAL_SZ];
   char stream[BNB_STREAM_SZ];
 
   if(ctx != NULL && ctx->parsed != NULL && ctx->parsed->argc > 0)
     symbol = ctx->parsed->argv[0];
 
+  if(!bnb_interval_from_bar_seconds((uint32_t)kv_get_uint("plugin.binance.bar_seconds"),
+        interval, sizeof(interval)))
+  {
+    cmd_reply(ctx, "binance subscribe: unsupported bar_seconds");
+    return;
+  }
+
   if(symbol == NULL || !bnb_subscription_table_add(&bnb_subscriptions, symbol)
-      || !bnb_ws_build_stream_name(symbol, "5m", stream, sizeof(stream)))
+      || !bnb_ws_build_stream_name(symbol, interval, stream, sizeof(stream)))
   {
     cmd_reply(ctx, "binance subscribe: invalid symbol");
     return;

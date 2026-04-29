@@ -75,12 +75,34 @@ test_build_stream_and_subscribe_payload(void)
   assert(strstr(payload, "\"id\":7") != NULL);
 }
 
+static void
+test_interval_from_bar_seconds(void)
+{
+  char interval[BNB_INTERVAL_SZ];
+
+  assert(bnb_interval_from_bar_seconds(60, interval, sizeof(interval)));
+  assert(strcmp(interval, "1m") == 0);
+  assert(bnb_interval_from_bar_seconds(300, interval, sizeof(interval)));
+  assert(strcmp(interval, "5m") == 0);
+  assert(bnb_interval_from_bar_seconds(900, interval, sizeof(interval)));
+  assert(strcmp(interval, "15m") == 0);
+  assert(bnb_interval_from_bar_seconds(3600, interval, sizeof(interval)));
+  assert(strcmp(interval, "1h") == 0);
+  assert(bnb_interval_from_bar_seconds(14400, interval, sizeof(interval)));
+  assert(strcmp(interval, "4h") == 0);
+  assert(bnb_interval_from_bar_seconds(86400, interval, sizeof(interval)));
+  assert(strcmp(interval, "1d") == 0);
+  assert(!bnb_interval_from_bar_seconds(120, interval, sizeof(interval)));
+  assert(interval[0] == '\0');
+}
+
 int
 main(void)
 {
   test_parse_combined_kline_frame();
   test_rejects_non_kline_frame();
   test_build_stream_and_subscribe_payload();
+  test_interval_from_bar_seconds();
   puts("test_ws_market_data: ok");
   return(0);
 }
