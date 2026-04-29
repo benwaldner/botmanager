@@ -60,6 +60,7 @@ test_add_csv_normalizes_and_deduplicates(void)
 {
   bnb_subscription_table_t table;
   char payload[BNB_WS_PAYLOAD_SZ];
+  char symbols[BNB_MAX_SYMBOLS][BNB_SYMBOL_SZ];
 
   bnb_subscription_table_init(&table);
   assert(bnb_subscription_table_add_csv(&table,
@@ -75,6 +76,13 @@ test_add_csv_normalizes_and_deduplicates(void)
   assert(strstr(payload, "\"btcusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"ethusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"solusdt@kline_5m\"") != NULL);
+
+  assert(bnb_subscription_table_snapshot(&table, symbols, BNB_MAX_SYMBOLS) == 3);
+  assert(strcmp(symbols[0], "BTCUSDT") == 0);
+  assert(strcmp(symbols[1], "ETHUSDT") == 0);
+  assert(strcmp(symbols[2], "SOLUSDT") == 0);
+  assert(bnb_subscription_table_snapshot(&table, symbols, 2) == 2);
+  assert(bnb_subscription_table_snapshot(&table, symbols, 0) == 0);
 
   bnb_subscription_table_destroy(&table);
 }

@@ -106,6 +106,7 @@ static void bnb_deinit(void);
 static void bnb_cmd_status(const cmd_ctx_t *ctx);
 static void bnb_cmd_subscribe(const cmd_ctx_t *ctx);
 static void bnb_cmd_unsubscribe(const cmd_ctx_t *ctx);
+static void bnb_cmd_subscriptions(const cmd_ctx_t *ctx);
 #endif
 
 // -----------------------------------------------------------------------
@@ -136,6 +137,8 @@ uint32_t bnb_subscription_table_add_csv(bnb_subscription_table_t *table,
 bool bnb_subscription_table_remove(bnb_subscription_table_t *table, const char *symbol);
 bool bnb_subscription_table_contains(const bnb_subscription_table_t *table, const char *symbol);
 uint32_t bnb_subscription_table_count(const bnb_subscription_table_t *table);
+uint32_t bnb_subscription_table_snapshot(const bnb_subscription_table_t *table,
+    char symbols[][BNB_SYMBOL_SZ], uint32_t max_symbols);
 bool bnb_subscription_table_update_bar(bnb_subscription_table_t *table,
     const bnb_bar_t *bar);
 bool bnb_subscription_table_get_bar(const bnb_subscription_table_t *table,
