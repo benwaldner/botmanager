@@ -49,10 +49,8 @@ static const plugin_kv_entry_t bnb_kv_schema[] = {
 // Module state
 // -----------------------------------------------------------------------
 
-// Subscription table. Static-sized for now — resized on demand in 2b.
-static bnb_sub_t       bnb_subs[BNB_MAX_SYMBOLS];
-static uint32_t        bnb_sub_count = 0;
-static pthread_rwlock_t bnb_subs_rwl;
+// Public market-data subscription table.
+static bnb_subscription_table_t bnb_subscriptions;
 
 // WS pump task handle.
 static task_t         *bnb_ws_task = NULL;
@@ -71,13 +69,12 @@ bnb_cmd_status(const cmd_ctx_t *ctx)
   char    buf[BNB_REPLY_SZ];
   uint8_t dry = (uint8_t)kv_get_uint("plugin.binance.dry_run");
 
-  pthread_rwlock_rdlock(&bnb_subs_rwl);
-  uint32_t count = bnb_sub_count;
-  pthread_rwlock_unlock(&bnb_subs_rwl);
+  uint32_t count = bnb_subscription_table_count(&bnb_subscriptions);
 
   snprintf(buf, sizeof(buf),
-      "binance: subs=%u dry_run=%u ws=%s",
-      count, dry, bnb_ws_task != NULL ? "running" : "stopped");
+      "binance: subs=%u cache=%u dry_run=%u ws=%s market-data-only",
+      count, bnb_bar_cache_count(&bnb_bar_cache), dry,
+      bnb_ws_task != NULL ? "running" : "stopped");
 
   cmd_reply(ctx, buf);
 }
@@ -92,7 +89,8 @@ bnb_cmd_subscribe(const cmd_ctx_t *ctx)
   if(ctx != NULL && ctx->parsed != NULL && ctx->parsed->argc > 0)
     symbol = ctx->parsed->argv[0];
 
-  if(symbol == NULL || !bnb_ws_build_stream_name(symbol, "5m", stream, sizeof(stream)))
+  if(symbol == NULL || !bnb_subscription_table_add(&bnb_subscriptions, symbol)
+      || !bnb_ws_build_stream_name(symbol, "5m", stream, sizeof(stream)))
   {
     cmd_reply(ctx, "binance subscribe: invalid symbol");
     return;
@@ -109,8 +107,18 @@ bnb_cmd_subscribe(const cmd_ctx_t *ctx)
 static void
 bnb_cmd_unsubscribe(const cmd_ctx_t *ctx)
 {
-  // TODO Phase 2b: remove from bnb_subs[], re-arm WS unsubscribe frame.
-  cmd_reply(ctx, "binance unsubscribe: not yet implemented (Phase 2b)");
+  const char *symbol = NULL;
+
+  if(ctx != NULL && ctx->parsed != NULL && ctx->parsed->argc > 0)
+    symbol = ctx->parsed->argv[0];
+
+  if(symbol == NULL || !bnb_subscription_table_remove(&bnb_subscriptions, symbol))
+  {
+    cmd_reply(ctx, "binance unsubscribe: symbol not subscribed");
+    return;
+  }
+
+  cmd_reply(ctx, "binance unsubscribe prepared (market-data only)");
 }
 
 // -----------------------------------------------------------------------
@@ -124,10 +132,8 @@ bnb_cmd_unsubscribe(const cmd_ctx_t *ctx)
 static bool
 bnb_init(void)
 {
-  pthread_rwlock_init(&bnb_subs_rwl, NULL);
   bnb_bar_cache_init(&bnb_bar_cache);
-  memset(bnb_subs, 0, sizeof(bnb_subs));
-  bnb_sub_count = 0;
+  bnb_subscription_table_init(&bnb_subscriptions);
 
   if(cmd_register("binance", "binance.status",
       "binance status",
@@ -201,7 +207,7 @@ bnb_deinit(void)
   cmd_unregister("binance.unsubscribe");
 
   bnb_bar_cache_destroy(&bnb_bar_cache);
-  pthread_rwlock_destroy(&bnb_subs_rwl);
+  bnb_subscription_table_destroy(&bnb_subscriptions);
 
   clam(CLAM_INFO, BNB_CTX, "binance plugin deinitialized");
 }
