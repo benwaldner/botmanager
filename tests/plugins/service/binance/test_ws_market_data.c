@@ -55,6 +55,9 @@ test_rejects_non_kline_frame(void)
 {
   bnb_bar_t bar;
   assert(!bnb_ws_parse_kline_frame("{\"data\":{\"e\":\"trade\"}}", &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame("[]", &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame("\"kline\"", &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame("7", &bar, NULL, 0));
   assert(!bnb_ws_parse_kline_frame("not-json", &bar, NULL, 0));
 }
 
