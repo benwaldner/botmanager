@@ -15,3 +15,7 @@ See BUILD.md
 ## Design
 
 See DESIGN.md
+
+## Service plugins
+
+- [Binance public market-data scaffold](plugins/service/binance/README.md)
