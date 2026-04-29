@@ -180,6 +180,32 @@ bnb_cmd_subscriptions(const cmd_ctx_t *ctx)
   cmd_reply(ctx, buf);
 }
 
+// !binance plan — show the offline public WS connection plan.
+static void
+bnb_cmd_plan(const cmd_ctx_t *ctx)
+{
+  bnb_ws_connection_plan_t plan;
+  const char *base_url = kv_get_str("plugin.binance.ws_base");
+  uint32_t bar_seconds = (uint32_t)kv_get_uint("plugin.binance.bar_seconds");
+  char buf[BNB_REPLY_SZ];
+  size_t payload_len;
+
+  if(!bnb_ws_build_connection_plan(&bnb_subscriptions, base_url,
+        bar_seconds, 1, &plan))
+  {
+    cmd_reply(ctx, "binance plan: unavailable (empty subs or unsupported bar_seconds)");
+    return;
+  }
+
+  payload_len = strlen(plan.subscribe_payload);
+  snprintf(buf, sizeof(buf),
+      "binance plan: count=%u interval=%s request_id=%u payload_len=%zu url=%.360s%s market-data-only",
+      plan.symbol_count, plan.interval, plan.request_id, payload_len,
+      plan.url, strlen(plan.url) > 360 ? "..." : "");
+
+  cmd_reply(ctx, buf);
+}
+
 // -----------------------------------------------------------------------
 // Plugin lifecycle
 // -----------------------------------------------------------------------
@@ -245,6 +271,21 @@ bnb_init(void)
     return(FAIL);
   }
 
+  if(cmd_register("binance", "binance.plan",
+      "binance plan",
+      "Show offline binance public websocket connection plan",
+      NULL,
+      USERNS_GROUP_ADMIN, 0, CMD_SCOPE_ANY, METHOD_T_ANY,
+      bnb_cmd_plan, NULL,
+      NULL, NULL, NULL, 0) != SUCCESS)
+  {
+    cmd_unregister("binance.status");
+    cmd_unregister("binance.subscribe");
+    cmd_unregister("binance.unsubscribe");
+    cmd_unregister("binance.subscriptions");
+    return(FAIL);
+  }
+
   symbols_csv = kv_get_str("plugin.binance.symbols");
   default_subs = bnb_subscription_table_add_csv(&bnb_subscriptions, symbols_csv);
 
@@ -286,6 +327,7 @@ bnb_deinit(void)
   cmd_unregister("binance.subscribe");
   cmd_unregister("binance.unsubscribe");
   cmd_unregister("binance.subscriptions");
+  cmd_unregister("binance.plan");
 
   bnb_bar_cache_destroy(&bnb_bar_cache);
   bnb_subscription_table_destroy(&bnb_subscriptions);
