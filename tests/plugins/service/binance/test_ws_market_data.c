@@ -400,6 +400,12 @@ test_parse_control_response(void)
         "{\"result\":[\"btcusdt@kline_5m\",null],\"id\":8}", &response));
   assert(!bnb_ws_parse_control_response(
         "{\"result\":[{\"stream\":\"btcusdt@kline_5m\"}],\"id\":8}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[\"btcusdt@trade\"],\"id\":8}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[\"btcusdt@kline_2m\"],\"id\":8}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[\"btc-usdt@kline_5m\"],\"id\":8}", &response));
   assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
   assert(!bnb_ws_parse_control_response("not-json", &response));
 }
