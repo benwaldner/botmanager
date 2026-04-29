@@ -351,6 +351,11 @@ test_parse_control_response(void)
   assert(response.request_id == 8);
   assert(response.result_count == 2);
 
+  assert(bnb_ws_parse_control_response("{\"result\":[],\"id\":12}", &response));
+  assert(response.kind == BNB_WS_CONTROL_RESULT_LIST);
+  assert(response.request_id == 12);
+  assert(response.result_count == 0);
+
   assert(bnb_ws_parse_control_response(
         "{\"code\":2,\"msg\":\"Invalid request\",\"id\":9}", &response));
   assert(response.kind == BNB_WS_CONTROL_ERROR);
@@ -389,6 +394,12 @@ test_parse_control_response(void)
         "{\"error\":{\"code\":3.5,\"msg\":\"Bad payload\"},\"id\":10}", &response));
   assert(!bnb_ws_parse_control_response(
         "{\"error\":{\"msg\":\"Bad payload\"},\"id\":10}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[\"btcusdt@kline_5m\",1],\"id\":8}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[\"btcusdt@kline_5m\",null],\"id\":8}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"result\":[{\"stream\":\"btcusdt@kline_5m\"}],\"id\":8}", &response));
   assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
   assert(!bnb_ws_parse_control_response("not-json", &response));
 }

@@ -410,6 +410,8 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   struct json_object *root = NULL;
   struct json_object *value = NULL;
   struct json_object *error = NULL;
+  size_t i;
+  size_t result_count;
 
   if(frame == NULL || out == NULL)
     return(false);
@@ -468,8 +470,25 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
 
   if(json_object_get_type(value) == json_type_array)
   {
+    result_count = json_object_array_length(value);
+    if(result_count > UINT32_MAX)
+    {
+      json_object_put(root);
+      return(false);
+    }
+
+    for(i = 0; i < result_count; i++)
+    {
+      struct json_object *entry = json_object_array_get_idx(value, i);
+      if(entry == NULL || json_object_get_type(entry) != json_type_string)
+      {
+        json_object_put(root);
+        return(false);
+      }
+    }
+
     out->kind = BNB_WS_CONTROL_RESULT_LIST;
-    out->result_count = (uint32_t)json_object_array_length(value);
+    out->result_count = (uint32_t)result_count;
     json_object_put(root);
     return(true);
   }

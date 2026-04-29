@@ -17,7 +17,7 @@ The only Binance paths represented here are public market-data helpers for
 kline stream names, combined-stream wrapper type and symbol-consistency
 validation, fail-closed integer-timestamp, string-field, OHLCV, trade-count,
 and finalized-flag validation, subscribe/unsubscribe payloads, control response
-id/error-code parsing,
+id/error-code/result-list parsing,
 supported-interval validation, combined stream URLs, in-memory subscription
 state, finalized bar cache, and offline reconnect backoff calculation.
 
@@ -79,7 +79,7 @@ The focused Binance tests cover:
 - finalized bar cache upsert/get behavior;
 - subscription add/remove/snapshot behavior;
 - subscribe/unsubscribe/list payload builders;
-- public WebSocket control response parsing, including fail-closed request id and error code validation;
+- public WebSocket control response parsing, including fail-closed request id, error code, and result-list validation;
 - combined stream URL builders;
 - offline connection-plan composition;
 - market-data dispatch into subscription and cache state;
