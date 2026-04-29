@@ -50,13 +50,27 @@ bnb_json_get_u32(struct json_object *obj, const char *key)
   return((uint32_t)json_object_get_int64(value));
 }
 
-static double
-bnb_json_get_double_str(struct json_object *obj, const char *key)
+static bool
+bnb_json_get_required_double_str(struct json_object *obj, const char *key,
+    double *out)
 {
-  const char *text = bnb_json_get_str(obj, key);
-  if(text == NULL)
-    return(0.0);
-  return(strtod(text, NULL));
+  const char *text;
+  char *end = NULL;
+  double value;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+
+  text = bnb_json_get_str(obj, key);
+  if(text == NULL || text[0] == '\0')
+    return(false);
+
+  value = strtod(text, &end);
+  if(end == text || end == NULL || *end != '\0')
+    return(false);
+
+  *out = value;
+  return(true);
 }
 
 static bool
@@ -128,6 +142,12 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   const char *kline_interval = NULL;
   char stream_symbol[BNB_SYMBOL_SZ];
   char stream_interval[BNB_INTERVAL_SZ];
+  double open;
+  double high;
+  double low;
+  double close;
+  double volume_base;
+  double volume_quote;
 
   if(frame == NULL || out == NULL)
     return(false);
@@ -178,16 +198,35 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     }
   }
 
+  if(!bnb_json_get_required_double_str(kline, "o", &open)
+      || !bnb_json_get_required_double_str(kline, "h", &high)
+      || !bnb_json_get_required_double_str(kline, "l", &low)
+      || !bnb_json_get_required_double_str(kline, "c", &close)
+      || !bnb_json_get_required_double_str(kline, "v", &volume_base)
+      || !bnb_json_get_required_double_str(kline, "q", &volume_quote))
+  {
+    json_object_put(root);
+    return(false);
+  }
+
+  if(open < 0.0 || high < 0.0 || low < 0.0 || close < 0.0
+      || volume_base < 0.0 || volume_quote < 0.0
+      || high < low || open < low || open > high || close < low || close > high)
+  {
+    json_object_put(root);
+    return(false);
+  }
+
   memset(out, 0, sizeof(*out));
   bnb_copy_upper(out->symbol, sizeof(out->symbol), symbol);
   out->open_time_ms = bnb_json_get_i64(kline, "t");
   out->close_time_ms = bnb_json_get_i64(kline, "T");
-  out->open = bnb_json_get_double_str(kline, "o");
-  out->high = bnb_json_get_double_str(kline, "h");
-  out->low = bnb_json_get_double_str(kline, "l");
-  out->close = bnb_json_get_double_str(kline, "c");
-  out->volume_base = bnb_json_get_double_str(kline, "v");
-  out->volume_quote = bnb_json_get_double_str(kline, "q");
+  out->open = open;
+  out->high = high;
+  out->low = low;
+  out->close = close;
+  out->volume_base = volume_base;
+  out->volume_quote = volume_quote;
   out->trade_count = bnb_json_get_u32(kline, "n");
   out->finalized = bnb_json_get_bool(kline, "x");
 

@@ -84,6 +84,45 @@ test_rejects_mismatched_combined_stream_frame(void)
 }
 
 static void
+test_rejects_invalid_ohlc_kline_frame(void)
+{
+  const char *missing_open =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *bad_range =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"2\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *negative_volume =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"-1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *non_numeric_close =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"bad\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(!bnb_ws_parse_kline_frame(missing_open, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(bad_range, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(negative_volume, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(non_numeric_close, &bar, NULL, 0));
+}
+
+static void
 test_parse_control_response(void)
 {
   bnb_ws_control_response_t response;
@@ -240,6 +279,7 @@ main(void)
   test_parse_combined_kline_frame();
   test_rejects_non_kline_frame();
   test_rejects_mismatched_combined_stream_frame();
+  test_rejects_invalid_ohlc_kline_frame();
   test_parse_control_response();
   test_build_stream_and_subscribe_payload();
   test_parse_stream_name();
