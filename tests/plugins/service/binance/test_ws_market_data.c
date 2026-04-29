@@ -62,6 +62,7 @@ static void
 test_build_stream_and_subscribe_payload(void)
 {
   const char *symbols[] = { "SOLUSDT", "btcusdt" };
+  const char *sparse_symbols[] = { NULL, "ETHUSDT" };
   char stream[BNB_STREAM_SZ];
   char payload[BNB_WS_PAYLOAD_SZ];
 
@@ -73,6 +74,16 @@ test_build_stream_and_subscribe_payload(void)
   assert(strstr(payload, "\"solusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"btcusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"id\":7") != NULL);
+
+  assert(bnb_ws_build_unsubscribe_payload(symbols, 2, "15m", 8, payload, sizeof(payload)));
+  assert(strstr(payload, "\"method\":\"UNSUBSCRIBE\"") != NULL);
+  assert(strstr(payload, "\"solusdt@kline_15m\"") != NULL);
+  assert(strstr(payload, "\"btcusdt@kline_15m\"") != NULL);
+  assert(strstr(payload, "\"id\":8") != NULL);
+
+  assert(bnb_ws_build_subscribe_payload(sparse_symbols, 2, "1h", 9, payload, sizeof(payload)));
+  assert(strstr(payload, "[,\"") == NULL);
+  assert(strstr(payload, "\"ethusdt@kline_1h\"") != NULL);
 }
 
 static void

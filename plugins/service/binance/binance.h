@@ -118,6 +118,9 @@ bool bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
 bool bnb_ws_build_subscribe_payload(const char * const *symbols,
     uint32_t symbol_count, const char *interval, uint32_t request_id,
     char *out, size_t out_sz);
+bool bnb_ws_build_unsubscribe_payload(const char * const *symbols,
+    uint32_t symbol_count, const char *interval, uint32_t request_id,
+    char *out, size_t out_sz);
 bool bnb_ws_build_stream_name(const char *symbol, const char *interval,
     char *out, size_t out_sz);
 bool bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz);
