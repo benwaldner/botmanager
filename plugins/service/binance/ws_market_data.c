@@ -284,8 +284,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     return(false);
   }
 
-  if(!bnb_json_get_obj(root, "data", &data))
+  if(!json_object_object_get_ex(root, "data", &data))
     data = root;
+  else if(data == NULL || json_object_get_type(data) != json_type_object)
+  {
+    json_object_put(root);
+    return(false);
+  }
 
   event_type = bnb_json_get_str(data, "e");
   if(event_type == NULL || strcmp(event_type, "kline") != 0)
@@ -295,6 +300,11 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   }
 
   if(!bnb_json_get_obj(data, "k", &kline))
+  {
+    json_object_put(root);
+    return(false);
+  }
+  if(json_object_get_type(kline) != json_type_object)
   {
     json_object_put(root);
     return(false);
