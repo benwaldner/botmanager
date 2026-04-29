@@ -136,6 +136,7 @@ static void bnb_cmd_status(const cmd_ctx_t *ctx);
 static void bnb_cmd_subscribe(const cmd_ctx_t *ctx);
 static void bnb_cmd_unsubscribe(const cmd_ctx_t *ctx);
 static void bnb_cmd_subscriptions(const cmd_ctx_t *ctx);
+static void bnb_cmd_plan(const cmd_ctx_t *ctx);
 #endif
 
 // -----------------------------------------------------------------------
