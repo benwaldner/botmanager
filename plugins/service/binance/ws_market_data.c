@@ -162,6 +162,25 @@ bnb_json_get_optional_u32(struct json_object *obj, const char *key,
 }
 
 static bool
+bnb_json_get_optional_i64(struct json_object *obj, const char *key,
+    int64_t *out)
+{
+  struct json_object *value = NULL;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+
+  *out = 0;
+  if(!json_object_object_get_ex(obj, key, &value))
+    return(true);
+  if(value == NULL || json_object_get_type(value) != json_type_int)
+    return(false);
+
+  *out = json_object_get_int64(value);
+  return(true);
+}
+
+static bool
 bnb_json_get_required_double_str(struct json_object *obj, const char *key,
     double *out)
 {
@@ -268,6 +287,7 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   double volume_base;
   double volume_quote;
   uint32_t trade_count;
+  int64_t event_time_ms;
   int64_t open_time_ms;
   int64_t close_time_ms;
   bool finalized;
@@ -327,6 +347,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     symbol = kline_symbol;
   if(symbol == NULL || kline_interval == NULL
       || !bnb_interval_is_supported_str(kline_interval))
+  {
+    json_object_put(root);
+    return(false);
+  }
+
+  if(!bnb_json_get_optional_i64(data, "E", &event_time_ms)
+      || event_time_ms < 0)
   {
     json_object_put(root);
     return(false);

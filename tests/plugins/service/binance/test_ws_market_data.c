@@ -247,10 +247,34 @@ test_rejects_non_integer_kline_timestamps(void)
       "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
       "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
     "}";
+  const char *string_event_time =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"E\":\"1777430000000\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *double_event_time =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"E\":1777430000000.5,\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *negative_event_time =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"E\":-1,\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
   bnb_bar_t bar;
 
   assert(!bnb_ws_parse_kline_frame(string_open_time, &bar, NULL, 0));
   assert(!bnb_ws_parse_kline_frame(double_close_time, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(string_event_time, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(double_event_time, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(negative_event_time, &bar, NULL, 0));
 }
 
 static void
