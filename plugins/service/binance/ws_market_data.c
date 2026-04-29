@@ -480,7 +480,15 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
     for(i = 0; i < result_count; i++)
     {
       struct json_object *entry = json_object_array_get_idx(value, i);
+      char stream_symbol[BNB_SYMBOL_SZ];
+      char stream_interval[BNB_INTERVAL_SZ];
       if(entry == NULL || json_object_get_type(entry) != json_type_string)
+      {
+        json_object_put(root);
+        return(false);
+      }
+      if(!bnb_ws_parse_stream_name(json_object_get_string(entry), stream_symbol,
+            sizeof(stream_symbol), stream_interval, sizeof(stream_interval)))
       {
         json_object_put(root);
         return(false);
