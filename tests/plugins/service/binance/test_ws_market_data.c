@@ -422,6 +422,9 @@ test_parse_control_response(void)
   assert(!bnb_ws_parse_control_response(
         "{\"result\":[\"btc-usdt@kline_5m\"],\"id\":8}", &response));
   assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
+  assert(!bnb_ws_parse_control_response("[]", &response));
+  assert(!bnb_ws_parse_control_response("\"result\"", &response));
+  assert(!bnb_ws_parse_control_response("7", &response));
   assert(!bnb_ws_parse_control_response("not-json", &response));
 }
 

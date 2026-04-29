@@ -404,6 +404,11 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   root = json_tokener_parse(frame);
   if(root == NULL)
     return(false);
+  if(json_object_get_type(root) != json_type_object)
+  {
+    json_object_put(root);
+    return(false);
+  }
 
   memset(out, 0, sizeof(*out));
   out->kind = BNB_WS_CONTROL_UNKNOWN;
