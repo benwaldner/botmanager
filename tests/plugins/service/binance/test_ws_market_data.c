@@ -378,6 +378,12 @@ test_parse_control_response(void)
   assert(response.code == -1003);
   assert(strcmp(response.msg, "Rate limited") == 0);
 
+  assert(bnb_ws_parse_control_response("{\"code\":2,\"id\":13}", &response));
+  assert(response.kind == BNB_WS_CONTROL_ERROR);
+  assert(response.request_id == 13);
+  assert(response.code == 2);
+  assert(strcmp(response.msg, "") == 0);
+
   assert(!bnb_ws_parse_control_response(
         "{\"result\":null,\"id\":\"7\"}", &response));
   assert(!bnb_ws_parse_control_response(
@@ -394,6 +400,15 @@ test_parse_control_response(void)
         "{\"error\":{\"code\":3.5,\"msg\":\"Bad payload\"},\"id\":10}", &response));
   assert(!bnb_ws_parse_control_response(
         "{\"error\":{\"msg\":\"Bad payload\"},\"id\":10}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"code\":2,\"msg\":7,\"id\":9}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"code\":2,\"msg\":{\"text\":\"Invalid request\"},\"id\":9}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":3,\"msg\":7},\"id\":10}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":3,\"msg\":{\"text\":\"Bad payload\"}},\"id\":10}",
+        &response));
   assert(!bnb_ws_parse_control_response(
         "{\"result\":[\"btcusdt@kline_5m\",1],\"id\":8}", &response));
   assert(!bnb_ws_parse_control_response(
