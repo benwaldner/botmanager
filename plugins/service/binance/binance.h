@@ -119,6 +119,7 @@ bool bnb_ws_build_subscribe_payload(const char * const *symbols,
     char *out, size_t out_sz);
 bool bnb_ws_build_stream_name(const char *symbol, const char *interval,
     char *out, size_t out_sz);
+bool bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz);
 
 void bnb_bar_cache_init(bnb_bar_cache_t *cache);
 void bnb_bar_cache_destroy(bnb_bar_cache_t *cache);
