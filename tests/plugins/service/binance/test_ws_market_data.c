@@ -59,6 +59,42 @@ test_rejects_non_kline_frame(void)
 }
 
 static void
+test_parse_control_response(void)
+{
+  bnb_ws_control_response_t response;
+
+  assert(bnb_ws_parse_control_response("{\"result\":null,\"id\":7}", &response));
+  assert(response.kind == BNB_WS_CONTROL_ACK);
+  assert(response.request_id == 7);
+  assert(response.code == 0);
+  assert(response.result_count == 0);
+
+  assert(bnb_ws_parse_control_response(
+        "{\"result\":[\"btcusdt@kline_5m\",\"ethusdt@kline_5m\"],\"id\":8}",
+        &response));
+  assert(response.kind == BNB_WS_CONTROL_RESULT_LIST);
+  assert(response.request_id == 8);
+  assert(response.result_count == 2);
+
+  assert(bnb_ws_parse_control_response(
+        "{\"code\":2,\"msg\":\"Invalid request\",\"id\":9}", &response));
+  assert(response.kind == BNB_WS_CONTROL_ERROR);
+  assert(response.request_id == 9);
+  assert(response.code == 2);
+  assert(strcmp(response.msg, "Invalid request") == 0);
+
+  assert(bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":3,\"msg\":\"Bad payload\"},\"id\":10}", &response));
+  assert(response.kind == BNB_WS_CONTROL_ERROR);
+  assert(response.request_id == 10);
+  assert(response.code == 3);
+  assert(strcmp(response.msg, "Bad payload") == 0);
+
+  assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
+  assert(!bnb_ws_parse_control_response("not-json", &response));
+}
+
+static void
 test_build_stream_and_subscribe_payload(void)
 {
   const char *symbols[] = { "SOLUSDT", "btcusdt" };
@@ -112,6 +148,7 @@ main(void)
 {
   test_parse_combined_kline_frame();
   test_rejects_non_kline_frame();
+  test_parse_control_response();
   test_build_stream_and_subscribe_payload();
   test_interval_from_bar_seconds();
   puts("test_ws_market_data: ok");

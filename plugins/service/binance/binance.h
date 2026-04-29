@@ -45,6 +45,7 @@
 #define BNB_INTERVAL_SZ     16
 #define BNB_STREAM_SZ       64
 #define BNB_WS_PAYLOAD_SZ   2048
+#define BNB_CONTROL_MSG_SZ  192
 
 // 5-minute bar size in seconds.
 #define BNB_BAR_SECONDS     300
@@ -93,6 +94,24 @@ typedef struct
   pthread_mutex_t mu;
 } bnb_bar_cache_t;
 
+typedef enum
+{
+  BNB_WS_CONTROL_UNKNOWN = 0,
+  BNB_WS_CONTROL_ACK,
+  BNB_WS_CONTROL_ERROR,
+  BNB_WS_CONTROL_RESULT_LIST,
+} bnb_ws_control_kind_t;
+
+// Parsed response for public WebSocket control commands.
+typedef struct
+{
+  bnb_ws_control_kind_t kind;
+  uint32_t request_id;
+  int32_t code;
+  uint32_t result_count;
+  char msg[BNB_CONTROL_MSG_SZ];
+} bnb_ws_control_response_t;
+
 // -----------------------------------------------------------------------
 // Forward declarations (lifecycle + commands)
 // -----------------------------------------------------------------------
@@ -115,6 +134,8 @@ static void bnb_cmd_subscriptions(const cmd_ctx_t *ctx);
 
 bool bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     char *interval, size_t interval_sz);
+bool bnb_ws_parse_control_response(const char *frame,
+    bnb_ws_control_response_t *out);
 bool bnb_ws_build_subscribe_payload(const char * const *symbols,
     uint32_t symbol_count, const char *interval, uint32_t request_id,
     char *out, size_t out_sz);
