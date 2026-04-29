@@ -185,22 +185,6 @@ bnb_json_get_required_double_str(struct json_object *obj, const char *key,
 }
 
 static void
-bnb_json_copy_str(char *dst, size_t dst_sz, struct json_object *obj,
-    const char *key)
-{
-  const char *text;
-
-  if(dst == NULL || dst_sz == 0)
-    return;
-  dst[0] = '\0';
-
-  text = bnb_json_get_str(obj, key);
-  if(text == NULL)
-    return;
-  snprintf(dst, dst_sz, "%s", text);
-}
-
-static void
 bnb_copy_upper(char *dst, size_t dst_sz, const char *src)
 {
   size_t i;
@@ -410,6 +394,7 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   struct json_object *root = NULL;
   struct json_object *value = NULL;
   struct json_object *error = NULL;
+  const char *msg = NULL;
   size_t i;
   size_t result_count;
 
@@ -437,7 +422,13 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
       json_object_put(root);
       return(false);
     }
-    bnb_json_copy_str(out->msg, sizeof(out->msg), error, "msg");
+    if(!bnb_json_get_optional_str(error, "msg", &msg))
+    {
+      json_object_put(root);
+      return(false);
+    }
+    if(msg != NULL)
+      snprintf(out->msg, sizeof(out->msg), "%s", msg);
     json_object_put(root);
     return(true);
   }
@@ -450,7 +441,13 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
       json_object_put(root);
       return(false);
     }
-    bnb_json_copy_str(out->msg, sizeof(out->msg), root, "msg");
+    if(!bnb_json_get_optional_str(root, "msg", &msg))
+    {
+      json_object_put(root);
+      return(false);
+    }
+    if(msg != NULL)
+      snprintf(out->msg, sizeof(out->msg), "%s", msg);
     json_object_put(root);
     return(true);
   }
