@@ -125,6 +125,30 @@ bnb_json_get_required_i64(struct json_object *obj, const char *key,
 }
 
 static bool
+bnb_json_get_optional_u32(struct json_object *obj, const char *key,
+    uint32_t *out)
+{
+  struct json_object *value = NULL;
+  int64_t raw;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+
+  *out = 0;
+  if(!json_object_object_get_ex(obj, key, &value))
+    return(true);
+  if(value == NULL || json_object_get_type(value) != json_type_int)
+    return(false);
+
+  raw = json_object_get_int64(value);
+  if(raw < 0 || raw > UINT32_MAX)
+    return(false);
+
+  *out = (uint32_t)raw;
+  return(true);
+}
+
+static bool
 bnb_json_get_required_double_str(struct json_object *obj, const char *key,
     double *out)
 {
@@ -384,8 +408,11 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   memset(out, 0, sizeof(*out));
   out->kind = BNB_WS_CONTROL_UNKNOWN;
 
-  if(bnb_json_get_obj(root, "id", &value))
-    out->request_id = (uint32_t)json_object_get_int64(value);
+  if(!bnb_json_get_optional_u32(root, "id", &out->request_id))
+  {
+    json_object_put(root);
+    return(false);
+  }
 
   if(bnb_json_get_obj(root, "error", &error))
   {
