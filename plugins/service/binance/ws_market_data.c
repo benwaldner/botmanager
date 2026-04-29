@@ -69,6 +69,22 @@ bnb_json_get_bool(struct json_object *obj, const char *key)
 }
 
 static void
+bnb_json_copy_str(char *dst, size_t dst_sz, struct json_object *obj,
+    const char *key)
+{
+  const char *text;
+
+  if(dst == NULL || dst_sz == 0)
+    return;
+  dst[0] = '\0';
+
+  text = bnb_json_get_str(obj, key);
+  if(text == NULL)
+    return;
+  snprintf(dst, dst_sz, "%s", text);
+}
+
+static void
 bnb_copy_upper(char *dst, size_t dst_sz, const char *src)
 {
   size_t i;
@@ -162,6 +178,72 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
 
   json_object_put(root);
   return(out->symbol[0] != '\0' && out->open_time_ms > 0 && out->close_time_ms > 0);
+}
+
+// Parse a public WebSocket control response such as SUBSCRIBE ACK,
+// UNSUBSCRIBE ACK, LIST_SUBSCRIPTIONS result, or an error object.
+// returns: true if the frame is a recognized control response
+bool
+bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
+{
+  struct json_object *root = NULL;
+  struct json_object *value = NULL;
+  struct json_object *error = NULL;
+
+  if(frame == NULL || out == NULL)
+    return(false);
+
+  root = json_tokener_parse(frame);
+  if(root == NULL)
+    return(false);
+
+  memset(out, 0, sizeof(*out));
+  out->kind = BNB_WS_CONTROL_UNKNOWN;
+
+  if(bnb_json_get_obj(root, "id", &value))
+    out->request_id = (uint32_t)json_object_get_int64(value);
+
+  if(bnb_json_get_obj(root, "error", &error))
+  {
+    out->kind = BNB_WS_CONTROL_ERROR;
+    out->code = (int32_t)bnb_json_get_i64(error, "code");
+    bnb_json_copy_str(out->msg, sizeof(out->msg), error, "msg");
+    json_object_put(root);
+    return(true);
+  }
+
+  if(bnb_json_get_obj(root, "code", &value))
+  {
+    out->kind = BNB_WS_CONTROL_ERROR;
+    out->code = (int32_t)json_object_get_int64(value);
+    bnb_json_copy_str(out->msg, sizeof(out->msg), root, "msg");
+    json_object_put(root);
+    return(true);
+  }
+
+  if(!json_object_object_get_ex(root, "result", &value))
+  {
+    json_object_put(root);
+    return(false);
+  }
+
+  if(value == NULL || json_object_get_type(value) == json_type_null)
+  {
+    out->kind = BNB_WS_CONTROL_ACK;
+    json_object_put(root);
+    return(true);
+  }
+
+  if(json_object_get_type(value) == json_type_array)
+  {
+    out->kind = BNB_WS_CONTROL_RESULT_LIST;
+    out->result_count = (uint32_t)json_object_array_length(value);
+    json_object_put(root);
+    return(true);
+  }
+
+  json_object_put(root);
+  return(false);
 }
 
 // Build one stream name such as "solusdt@kline_5m".
