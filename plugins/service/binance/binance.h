@@ -178,6 +178,9 @@ bool bnb_subscription_table_build_subscribe_payload(
 bool bnb_subscription_table_build_unsubscribe_payload(
     const bnb_subscription_table_t *table, const char *interval,
     uint32_t request_id, char *out, size_t out_sz);
+bool bnb_subscription_table_build_combined_stream_url(
+    const bnb_subscription_table_t *table, const char *base_url,
+    const char *interval, char *out, size_t out_sz);
 bool bnb_market_data_apply_kline_frame(bnb_subscription_table_t *table,
     bnb_bar_cache_t *cache, const char *frame, const char *expected_interval,
     bnb_bar_t *out);

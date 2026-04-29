@@ -38,12 +38,16 @@ test_build_payload_snapshot(void)
 {
   bnb_subscription_table_t table;
   char payload[BNB_WS_PAYLOAD_SZ];
+  char url[BNB_URL_SZ];
+  char tiny_url[24];
 
   bnb_subscription_table_init(&table);
   assert(!bnb_subscription_table_build_subscribe_payload(
         &table, "5m", 11, payload, sizeof(payload)));
   assert(!bnb_subscription_table_build_unsubscribe_payload(
         &table, "5m", 11, payload, sizeof(payload)));
+  assert(!bnb_subscription_table_build_combined_stream_url(
+        &table, BNB_WS_BASE, "5m", url, sizeof(url)));
 
   assert(bnb_subscription_table_add(&table, "BTCUSDT"));
   assert(bnb_subscription_table_add(&table, "ethusdt"));
@@ -60,6 +64,13 @@ test_build_payload_snapshot(void)
   assert(strstr(payload, "\"btcusdt@kline_15m\"") != NULL);
   assert(strstr(payload, "\"ethusdt@kline_15m\"") != NULL);
   assert(strstr(payload, "\"id\":13") != NULL);
+
+  assert(bnb_subscription_table_build_combined_stream_url(
+        &table, BNB_WS_BASE, "1h", url, sizeof(url)));
+  assert(strstr(url, BNB_WS_BASE "?streams=") == url);
+  assert(strstr(url, "btcusdt@kline_1h/ethusdt@kline_1h") != NULL);
+  assert(!bnb_subscription_table_build_combined_stream_url(
+        &table, BNB_WS_BASE, "1h", tiny_url, sizeof(tiny_url)));
 
   bnb_subscription_table_destroy(&table);
 }
