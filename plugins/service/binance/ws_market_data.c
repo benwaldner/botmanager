@@ -263,6 +263,49 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
   return(n > 0 && (size_t)n < out_sz);
 }
 
+// Build a Binance combined-stream URL such as:
+// wss://.../stream?streams=solusdt@kline_5m/btcusdt@kline_5m
+// returns: true if output fit and at least one symbol was included
+bool
+bnb_ws_build_combined_stream_url(const char *base_url,
+    const char * const *symbols, uint32_t symbol_count, const char *interval,
+    char *out, size_t out_sz)
+{
+  size_t used = 0;
+  uint32_t i;
+  uint32_t stream_count = 0;
+  int n;
+
+  if(base_url == NULL || symbols == NULL || symbol_count == 0 || interval == NULL
+      || out == NULL || out_sz == 0)
+    return(false);
+
+  n = snprintf(out, out_sz, "%s?streams=", base_url);
+  if(n < 0 || (size_t)n >= out_sz)
+    return(false);
+  used = (size_t)n;
+
+  for(i = 0; i < symbol_count; i++)
+  {
+    char stream[BNB_STREAM_SZ];
+
+    if(symbols[i] == NULL || symbols[i][0] == '\0')
+      continue;
+    if(!bnb_ws_build_stream_name(symbols[i], interval, stream, sizeof(stream)))
+      return(false);
+
+    n = snprintf(out + used, out_sz - used, "%s%s",
+        stream_count == 0 ? "" : "/",
+        stream);
+    if(n < 0 || (size_t)n >= out_sz - used)
+      return(false);
+    used += (size_t)n;
+    stream_count++;
+  }
+
+  return(stream_count > 0);
+}
+
 // Convert configured bar size to a Binance public kline interval.
 // returns: true for supported intervals, false for unsupported values
 bool

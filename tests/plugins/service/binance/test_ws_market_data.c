@@ -100,10 +100,26 @@ test_build_stream_and_subscribe_payload(void)
   const char *symbols[] = { "SOLUSDT", "btcusdt" };
   const char *sparse_symbols[] = { NULL, "ETHUSDT" };
   char stream[BNB_STREAM_SZ];
+  char url[BNB_URL_SZ];
+  char tiny_url[24];
   char payload[BNB_WS_PAYLOAD_SZ];
 
   assert(bnb_ws_build_stream_name("SOLUSDT", "5m", stream, sizeof(stream)));
   assert(strcmp(stream, "solusdt@kline_5m") == 0);
+
+  assert(bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
+        url, sizeof(url)));
+  assert(strstr(url, BNB_WS_BASE "?streams=") == url);
+  assert(strstr(url, "solusdt@kline_5m/btcusdt@kline_5m") != NULL);
+
+  assert(bnb_ws_build_combined_stream_url(BNB_WS_BASE, sparse_symbols, 2, "1h",
+        url, sizeof(url)));
+  assert(strstr(url, "?streams=/") == NULL);
+  assert(strstr(url, "ethusdt@kline_1h") != NULL);
+  assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, sparse_symbols, 1, "1h",
+        url, sizeof(url)));
+  assert(!bnb_ws_build_combined_stream_url(BNB_WS_BASE, symbols, 2, "5m",
+        tiny_url, sizeof(tiny_url)));
 
   assert(bnb_ws_build_subscribe_payload(symbols, 2, "5m", 7, payload, sizeof(payload)));
   assert(strstr(payload, "\"method\":\"SUBSCRIBE\"") != NULL);
