@@ -39,9 +39,19 @@ Supported `bar_seconds` mappings are intentionally explicit:
 | Seconds | Binance interval |
 | ---: | --- |
 | `60` | `1m` |
+| `180` | `3m` |
 | `300` | `5m` |
 | `900` | `15m` |
+| `1800` | `30m` |
 | `3600` | `1h` |
+| `7200` | `2h` |
+| `14400` | `4h` |
+| `21600` | `6h` |
+| `28800` | `8h` |
+| `43200` | `12h` |
+| `86400` | `1d` |
+| `259200` | `3d` |
+| `604800` | `1w` |
 
 Unsupported intervals fail closed.
 
