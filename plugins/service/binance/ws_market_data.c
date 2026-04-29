@@ -121,10 +121,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   struct json_object *root = NULL;
   struct json_object *data = NULL;
   struct json_object *kline = NULL;
+  struct json_object *stream_obj = NULL;
   const char *event_type = NULL;
   const char *symbol = NULL;
   const char *kline_symbol = NULL;
   const char *kline_interval = NULL;
+  char stream_symbol[BNB_SYMBOL_SZ];
+  char stream_interval[BNB_INTERVAL_SZ];
 
   if(frame == NULL || out == NULL)
     return(false);
@@ -158,6 +161,21 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   {
     json_object_put(root);
     return(false);
+  }
+
+  if(json_object_object_get_ex(root, "stream", &stream_obj)
+      && stream_obj != NULL
+      && json_object_get_type(stream_obj) == json_type_string)
+  {
+    if(!bnb_ws_parse_stream_name(json_object_get_string(stream_obj),
+          stream_symbol, sizeof(stream_symbol),
+          stream_interval, sizeof(stream_interval))
+        || strcasecmp(stream_symbol, symbol) != 0
+        || strcasecmp(stream_interval, kline_interval) != 0)
+    {
+      json_object_put(root);
+      return(false);
+    }
   }
 
   memset(out, 0, sizeof(*out));
@@ -261,6 +279,53 @@ bnb_ws_build_stream_name(const char *symbol, const char *interval,
   bnb_copy_lower(lower_symbol, sizeof(lower_symbol), symbol);
   n = snprintf(out, out_sz, "%s@kline_%s", lower_symbol, interval);
   return(n > 0 && (size_t)n < out_sz);
+}
+
+// Parse one stream name such as "solusdt@kline_5m".
+// returns: true if symbol/interval were extracted and fit outputs
+bool
+bnb_ws_parse_stream_name(const char *stream, char *symbol, size_t symbol_sz,
+    char *interval, size_t interval_sz)
+{
+  const char *marker = "@kline_";
+  const char *pos;
+  const char *src_interval;
+  size_t symbol_len;
+  size_t i;
+  int n;
+
+  if(stream == NULL || symbol == NULL || symbol_sz == 0
+      || interval == NULL || interval_sz == 0)
+    return(false);
+
+  symbol[0] = '\0';
+  interval[0] = '\0';
+  pos = strstr(stream, marker);
+  if(pos == NULL || pos == stream)
+    return(false);
+
+  symbol_len = (size_t)(pos - stream);
+  if(symbol_len + 1 > symbol_sz)
+    return(false);
+  for(i = 0; i < symbol_len; i++)
+  {
+    if(!isalnum((unsigned char)stream[i]))
+      return(false);
+    symbol[i] = (char)toupper((unsigned char)stream[i]);
+  }
+  symbol[symbol_len] = '\0';
+
+  src_interval = pos + strlen(marker);
+  if(src_interval[0] == '\0')
+    return(false);
+  for(i = 0; src_interval[i] != '\0'; i++)
+  {
+    if(!isalnum((unsigned char)src_interval[i]))
+      return(false);
+  }
+
+  n = snprintf(interval, interval_sz, "%s", src_interval);
+  return(n > 0 && (size_t)n < interval_sz);
 }
 
 // Build a Binance combined-stream URL such as:

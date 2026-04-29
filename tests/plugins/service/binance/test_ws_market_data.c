@@ -59,6 +59,31 @@ test_rejects_non_kline_frame(void)
 }
 
 static void
+test_rejects_mismatched_combined_stream_frame(void)
+{
+  const char *wrong_symbol =
+    "{"
+    "\"stream\":\"btcusdt@kline_5m\","
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *wrong_interval =
+    "{"
+    "\"stream\":\"solusdt@kline_1m\","
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(!bnb_ws_parse_kline_frame(wrong_symbol, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(wrong_interval, &bar, NULL, 0));
+}
+
+static void
 test_parse_control_response(void)
 {
   bnb_ws_control_response_t response;
@@ -145,6 +170,34 @@ test_build_stream_and_subscribe_payload(void)
 }
 
 static void
+test_parse_stream_name(void)
+{
+  char symbol[BNB_SYMBOL_SZ];
+  char interval[BNB_INTERVAL_SZ];
+  char tiny_symbol[4];
+
+  assert(bnb_ws_parse_stream_name("solusdt@kline_5m",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(strcmp(symbol, "SOLUSDT") == 0);
+  assert(strcmp(interval, "5m") == 0);
+  assert(bnb_ws_parse_stream_name("BTCUSDT@kline_1h",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(strcmp(symbol, "BTCUSDT") == 0);
+  assert(strcmp(interval, "1h") == 0);
+
+  assert(!bnb_ws_parse_stream_name("@kline_5m",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(!bnb_ws_parse_stream_name("bad/symbol@kline_5m",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(!bnb_ws_parse_stream_name("solusdt@ticker",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(!bnb_ws_parse_stream_name("solusdt@kline_",
+        symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(!bnb_ws_parse_stream_name("solusdt@kline_5m",
+        tiny_symbol, sizeof(tiny_symbol), interval, sizeof(interval)));
+}
+
+static void
 test_interval_from_bar_seconds(void)
 {
   char interval[BNB_INTERVAL_SZ];
@@ -170,8 +223,10 @@ main(void)
 {
   test_parse_combined_kline_frame();
   test_rejects_non_kline_frame();
+  test_rejects_mismatched_combined_stream_frame();
   test_parse_control_response();
   test_build_stream_and_subscribe_payload();
+  test_parse_stream_name();
   test_interval_from_bar_seconds();
   puts("test_ws_market_data: ok");
   return(0);
