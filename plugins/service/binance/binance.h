@@ -112,6 +112,16 @@ typedef struct
   char msg[BNB_CONTROL_MSG_SZ];
 } bnb_ws_control_response_t;
 
+// Offline WebSocket connection plan for public kline subscriptions.
+typedef struct
+{
+  char url[BNB_URL_SZ];
+  char subscribe_payload[BNB_WS_PAYLOAD_SZ];
+  char interval[BNB_INTERVAL_SZ];
+  uint32_t symbol_count;
+  uint32_t request_id;
+} bnb_ws_connection_plan_t;
+
 // -----------------------------------------------------------------------
 // Forward declarations (lifecycle + commands)
 // -----------------------------------------------------------------------
@@ -181,6 +191,9 @@ bool bnb_subscription_table_build_unsubscribe_payload(
 bool bnb_subscription_table_build_combined_stream_url(
     const bnb_subscription_table_t *table, const char *base_url,
     const char *interval, char *out, size_t out_sz);
+bool bnb_ws_build_connection_plan(const bnb_subscription_table_t *table,
+    const char *base_url, uint32_t bar_seconds, uint32_t request_id,
+    bnb_ws_connection_plan_t *out);
 bool bnb_market_data_apply_kline_frame(bnb_subscription_table_t *table,
     bnb_bar_cache_t *cache, const char *frame, const char *expected_interval,
     bnb_bar_t *out);

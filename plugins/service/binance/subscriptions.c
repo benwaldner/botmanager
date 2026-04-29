@@ -373,3 +373,45 @@ bnb_subscription_table_build_combined_stream_url(
   return(bnb_ws_build_combined_stream_url(base_url, symbol_ptrs, count, interval,
         out, out_sz));
 }
+
+bool
+bnb_ws_build_connection_plan(const bnb_subscription_table_t *table,
+    const char *base_url, uint32_t bar_seconds, uint32_t request_id,
+    bnb_ws_connection_plan_t *out)
+{
+  uint32_t count;
+
+  if(table == NULL || base_url == NULL || out == NULL)
+    return(false);
+
+  memset(out, 0, sizeof(*out));
+
+  if(!bnb_interval_from_bar_seconds(bar_seconds, out->interval,
+        sizeof(out->interval)))
+    return(false);
+
+  count = bnb_subscription_table_count(table);
+  if(count == 0)
+  {
+    memset(out, 0, sizeof(*out));
+    return(false);
+  }
+
+  if(!bnb_subscription_table_build_combined_stream_url(table, base_url,
+        out->interval, out->url, sizeof(out->url)))
+  {
+    memset(out, 0, sizeof(*out));
+    return(false);
+  }
+
+  if(!bnb_subscription_table_build_subscribe_payload(table, out->interval,
+        request_id, out->subscribe_payload, sizeof(out->subscribe_payload)))
+  {
+    memset(out, 0, sizeof(*out));
+    return(false);
+  }
+
+  out->symbol_count = count;
+  out->request_id = request_id;
+  return(true);
+}
