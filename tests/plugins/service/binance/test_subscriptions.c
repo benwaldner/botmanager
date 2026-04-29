@@ -42,6 +42,8 @@ test_build_payload_snapshot(void)
   bnb_subscription_table_init(&table);
   assert(!bnb_subscription_table_build_subscribe_payload(
         &table, "5m", 11, payload, sizeof(payload)));
+  assert(!bnb_subscription_table_build_unsubscribe_payload(
+        &table, "5m", 11, payload, sizeof(payload)));
 
   assert(bnb_subscription_table_add(&table, "BTCUSDT"));
   assert(bnb_subscription_table_add(&table, "ethusdt"));
@@ -51,6 +53,13 @@ test_build_payload_snapshot(void)
   assert(strstr(payload, "\"btcusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"ethusdt@kline_5m\"") != NULL);
   assert(strstr(payload, "\"id\":11") != NULL);
+
+  assert(bnb_subscription_table_build_unsubscribe_payload(
+        &table, "15m", 13, payload, sizeof(payload)));
+  assert(strstr(payload, "\"method\":\"UNSUBSCRIBE\"") != NULL);
+  assert(strstr(payload, "\"btcusdt@kline_15m\"") != NULL);
+  assert(strstr(payload, "\"ethusdt@kline_15m\"") != NULL);
+  assert(strstr(payload, "\"id\":13") != NULL);
 
   bnb_subscription_table_destroy(&table);
 }

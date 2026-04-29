@@ -314,24 +314,39 @@ bnb_subscription_table_build_subscribe_payload(
   char symbols[BNB_MAX_SYMBOLS][BNB_SYMBOL_SZ];
   const char *symbol_ptrs[BNB_MAX_SYMBOLS];
   uint32_t i;
-  uint32_t count = 0;
-  bnb_subscription_table_t *mutable_table = (bnb_subscription_table_t *)table;
+  uint32_t count;
 
   if(table == NULL || out == NULL || out_sz == 0)
     return(false);
 
-  pthread_rwlock_rdlock(&mutable_table->rwl);
-  for(i = 0; i < BNB_MAX_SYMBOLS && count < BNB_MAX_SYMBOLS; i++)
-  {
-    if(table->subs[i].symbol[0] == '\0')
-      continue;
-    snprintf(symbols[count], sizeof(symbols[count]), "%s", table->subs[i].symbol);
-    symbol_ptrs[count] = symbols[count];
-    count++;
-  }
-  pthread_rwlock_unlock(&mutable_table->rwl);
+  count = bnb_subscription_table_snapshot(table, symbols, BNB_MAX_SYMBOLS);
+  for(i = 0; i < count; i++)
+    symbol_ptrs[i] = symbols[i];
 
   if(count == 0)
     return(false);
   return(bnb_ws_build_subscribe_payload(symbol_ptrs, count, interval, request_id, out, out_sz));
+}
+
+bool
+bnb_subscription_table_build_unsubscribe_payload(
+    const bnb_subscription_table_t *table, const char *interval,
+    uint32_t request_id, char *out, size_t out_sz)
+{
+  char symbols[BNB_MAX_SYMBOLS][BNB_SYMBOL_SZ];
+  const char *symbol_ptrs[BNB_MAX_SYMBOLS];
+  uint32_t i;
+  uint32_t count;
+
+  if(table == NULL || out == NULL || out_sz == 0)
+    return(false);
+
+  count = bnb_subscription_table_snapshot(table, symbols, BNB_MAX_SYMBOLS);
+  for(i = 0; i < count; i++)
+    symbol_ptrs[i] = symbols[i];
+
+  if(count == 0)
+    return(false);
+  return(bnb_ws_build_unsubscribe_payload(symbol_ptrs, count, interval, request_id,
+        out, out_sz));
 }
