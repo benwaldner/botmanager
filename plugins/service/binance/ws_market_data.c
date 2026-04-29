@@ -175,6 +175,12 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   symbol = bnb_json_get_str(data, "s");
   kline_symbol = bnb_json_get_str(kline, "s");
   kline_interval = bnb_json_get_str(kline, "i");
+  if(symbol != NULL && kline_symbol != NULL
+      && strcasecmp(symbol, kline_symbol) != 0)
+  {
+    json_object_put(root);
+    return(false);
+  }
   if(kline_symbol != NULL)
     symbol = kline_symbol;
   if(symbol == NULL || kline_interval == NULL)
