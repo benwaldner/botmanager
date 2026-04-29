@@ -96,15 +96,6 @@ bnb_json_get_required_double_str(struct json_object *obj, const char *key,
   return(true);
 }
 
-static bool
-bnb_json_get_bool(struct json_object *obj, const char *key)
-{
-  struct json_object *value = NULL;
-  if(!bnb_json_get_obj(obj, key, &value))
-    return(false);
-  return(json_object_get_boolean(value));
-}
-
 static void
 bnb_json_copy_str(char *dst, size_t dst_sz, struct json_object *obj,
     const char *key)
@@ -166,6 +157,22 @@ bnb_interval_is_supported_str(const char *interval)
   return(false);
 }
 
+static bool
+bnb_json_get_required_bool(struct json_object *obj, const char *key, bool *out)
+{
+  struct json_object *value = NULL;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+  if(!bnb_json_get_obj(obj, key, &value))
+    return(false);
+  if(json_object_get_type(value) != json_type_boolean)
+    return(false);
+
+  *out = json_object_get_boolean(value);
+  return(true);
+}
+
 // Parse one Binance combined-stream kline frame into a finalized/partial bar.
 // returns: true on successful parse, false on invalid or unsupported frame
 bool
@@ -188,6 +195,7 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   double close;
   double volume_base;
   double volume_quote;
+  bool finalized;
 
   if(frame == NULL || out == NULL)
     return(false);
@@ -250,7 +258,8 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
       || !bnb_json_get_required_double_str(kline, "l", &low)
       || !bnb_json_get_required_double_str(kline, "c", &close)
       || !bnb_json_get_required_double_str(kline, "v", &volume_base)
-      || !bnb_json_get_required_double_str(kline, "q", &volume_quote))
+      || !bnb_json_get_required_double_str(kline, "q", &volume_quote)
+      || !bnb_json_get_required_bool(kline, "x", &finalized))
   {
     json_object_put(root);
     return(false);
@@ -282,7 +291,7 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   out->volume_base = volume_base;
   out->volume_quote = volume_quote;
   out->trade_count = bnb_json_get_u32(kline, "n");
-  out->finalized = bnb_json_get_bool(kline, "x");
+  out->finalized = finalized;
 
   if(interval != NULL && interval_sz > 0)
     snprintf(interval, interval_sz, "%s", kline_interval);
