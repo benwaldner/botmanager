@@ -52,7 +52,28 @@ bnb_json_get_str(struct json_object *obj, const char *key)
   struct json_object *value = NULL;
   if(!bnb_json_get_obj(obj, key, &value))
     return(NULL);
+  if(json_object_get_type(value) != json_type_string)
+    return(NULL);
   return(json_object_get_string(value));
+}
+
+static bool
+bnb_json_get_optional_str(struct json_object *obj, const char *key,
+    const char **out)
+{
+  struct json_object *value = NULL;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+
+  *out = NULL;
+  if(!json_object_object_get_ex(obj, key, &value))
+    return(true);
+  if(value == NULL || json_object_get_type(value) != json_type_string)
+    return(false);
+
+  *out = json_object_get_string(value);
+  return(true);
 }
 
 static int64_t
@@ -234,9 +255,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     return(false);
   }
 
-  symbol = bnb_json_get_str(data, "s");
-  kline_symbol = bnb_json_get_str(kline, "s");
-  kline_interval = bnb_json_get_str(kline, "i");
+  if(!bnb_json_get_optional_str(data, "s", &symbol)
+      || !bnb_json_get_optional_str(kline, "s", &kline_symbol)
+      || !bnb_json_get_optional_str(kline, "i", &kline_interval))
+  {
+    json_object_put(root);
+    return(false);
+  }
   if(symbol != NULL && kline_symbol != NULL
       && strcasecmp(symbol, kline_symbol) != 0)
   {
