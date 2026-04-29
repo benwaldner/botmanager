@@ -184,6 +184,38 @@ test_rejects_unsupported_kline_interval(void)
 }
 
 static void
+test_validates_kline_finalized_flag(void)
+{
+  const char *partial =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":false,\"q\":\"1\"}}"
+    "}";
+  const char *missing =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"q\":\"1\"}}"
+    "}";
+  const char *non_boolean =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":\"false\",\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(bnb_ws_parse_kline_frame(partial, &bar, NULL, 0));
+  assert(bar.finalized == false);
+  assert(!bnb_ws_parse_kline_frame(missing, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(non_boolean, &bar, NULL, 0));
+}
+
+static void
 test_parse_control_response(void)
 {
   bnb_ws_control_response_t response;
@@ -353,6 +385,7 @@ main(void)
   test_rejects_invalid_ohlc_kline_frame();
   test_rejects_invalid_kline_time_window();
   test_rejects_unsupported_kline_interval();
+  test_validates_kline_finalized_flag();
   test_parse_control_response();
   test_build_stream_and_subscribe_payload();
   test_parse_stream_name();
