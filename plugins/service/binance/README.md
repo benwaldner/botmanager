@@ -14,10 +14,10 @@ trading or private account access.
 - No socket loop is started by the current scaffold.
 
 The only Binance paths represented here are public market-data helpers for
-kline stream names, combined-stream wrapper validation,
-subscribe/unsubscribe payloads, control response parsing, combined stream URLs,
-in-memory subscription state, finalized bar cache, and offline reconnect
-backoff calculation.
+kline stream names, combined-stream wrapper validation, fail-closed OHLCV field
+validation, subscribe/unsubscribe payloads, control response parsing, combined
+stream URLs, in-memory subscription state, finalized bar cache, and offline
+reconnect backoff calculation.
 
 ## Configuration
 
@@ -72,7 +72,7 @@ plans. They do not contact Binance.
 
 The focused Binance tests cover:
 
-- public kline frame parsing and combined-stream symbol/interval mismatch rejection;
+- public kline frame parsing, OHLCV validation, and combined-stream symbol/interval mismatch rejection;
 - finalized bar cache upsert/get behavior;
 - subscription add/remove/snapshot behavior;
 - subscribe/unsubscribe/list payload builders;

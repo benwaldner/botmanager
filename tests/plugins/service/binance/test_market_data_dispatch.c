@@ -9,6 +9,10 @@ static void
 build_frame(char *out, size_t out_sz, const char *symbol, const char *interval,
     bool finalized, double close)
 {
+  double open = close >= 0.5 ? close - 0.5 : close;
+  double high = close + 0.5;
+  double low = close >= 0.75 ? close - 0.75 : 0.0;
+
   snprintf(out, out_sz,
       "{"
       "\"stream\":\"%s@kline_%s\","
@@ -20,10 +24,10 @@ build_frame(char *out, size_t out_sz, const char *symbol, const char *interval,
           "\"T\":1777430099999,"
           "\"s\":\"%s\","
           "\"i\":\"%s\","
-          "\"o\":\"86.10000000\","
+          "\"o\":\"%.8f\","
           "\"c\":\"%.8f\","
-          "\"h\":\"86.40000000\","
-          "\"l\":\"86.05000000\","
+          "\"h\":\"%.8f\","
+          "\"l\":\"%.8f\","
           "\"v\":\"1234.50000000\","
           "\"n\":42,"
           "\"x\":%s,"
@@ -31,7 +35,7 @@ build_frame(char *out, size_t out_sz, const char *symbol, const char *interval,
         "}"
       "}"
       "}",
-      symbol, interval, symbol, symbol, interval, close,
+      symbol, interval, symbol, symbol, interval, open, close, high, low,
       finalized ? "true" : "false");
 }
 
