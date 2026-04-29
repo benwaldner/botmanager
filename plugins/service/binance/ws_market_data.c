@@ -108,6 +108,23 @@ bnb_json_get_required_u32(struct json_object *obj, const char *key,
 }
 
 static bool
+bnb_json_get_required_i64(struct json_object *obj, const char *key,
+    int64_t *out)
+{
+  struct json_object *value = NULL;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+  if(!bnb_json_get_obj(obj, key, &value))
+    return(false);
+  if(json_object_get_type(value) != json_type_int)
+    return(false);
+
+  *out = json_object_get_int64(value);
+  return(true);
+}
+
+static bool
 bnb_json_get_required_double_str(struct json_object *obj, const char *key,
     double *out)
 {
@@ -230,6 +247,8 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   double volume_base;
   double volume_quote;
   uint32_t trade_count;
+  int64_t open_time_ms;
+  int64_t close_time_ms;
   bool finalized;
 
   if(frame == NULL || out == NULL)
@@ -299,6 +318,8 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
       || !bnb_json_get_required_double_str(kline, "v", &volume_base)
       || !bnb_json_get_required_double_str(kline, "q", &volume_quote)
       || !bnb_json_get_required_u32(kline, "n", &trade_count)
+      || !bnb_json_get_required_i64(kline, "t", &open_time_ms)
+      || !bnb_json_get_required_i64(kline, "T", &close_time_ms)
       || !bnb_json_get_required_bool(kline, "x", &finalized))
   {
     json_object_put(root);
@@ -315,8 +336,8 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
 
   memset(out, 0, sizeof(*out));
   bnb_copy_upper(out->symbol, sizeof(out->symbol), symbol);
-  out->open_time_ms = bnb_json_get_i64(kline, "t");
-  out->close_time_ms = bnb_json_get_i64(kline, "T");
+  out->open_time_ms = open_time_ms;
+  out->close_time_ms = close_time_ms;
   if(out->open_time_ms <= 0 || out->close_time_ms <= out->open_time_ms)
   {
     json_object_put(root);
