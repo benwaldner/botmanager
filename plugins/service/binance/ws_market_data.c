@@ -278,6 +278,11 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
   root = json_tokener_parse(frame);
   if(root == NULL)
     return(false);
+  if(json_object_get_type(root) != json_type_object)
+  {
+    json_object_put(root);
+    return(false);
+  }
 
   if(!bnb_json_get_obj(root, "data", &data))
     data = root;
