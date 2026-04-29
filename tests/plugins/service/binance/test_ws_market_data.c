@@ -365,12 +365,30 @@ test_parse_control_response(void)
   assert(response.code == 3);
   assert(strcmp(response.msg, "Bad payload") == 0);
 
+  assert(bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":-1003,\"msg\":\"Rate limited\"},\"id\":11}",
+        &response));
+  assert(response.kind == BNB_WS_CONTROL_ERROR);
+  assert(response.request_id == 11);
+  assert(response.code == -1003);
+  assert(strcmp(response.msg, "Rate limited") == 0);
+
   assert(!bnb_ws_parse_control_response(
         "{\"result\":null,\"id\":\"7\"}", &response));
   assert(!bnb_ws_parse_control_response(
         "{\"result\":null,\"id\":-1}", &response));
   assert(!bnb_ws_parse_control_response(
         "{\"result\":null,\"id\":7.5}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"code\":\"2\",\"msg\":\"Invalid request\",\"id\":9}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"code\":2.5,\"msg\":\"Invalid request\",\"id\":9}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":\"3\",\"msg\":\"Bad payload\"},\"id\":10}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"error\":{\"code\":3.5,\"msg\":\"Bad payload\"},\"id\":10}", &response));
+  assert(!bnb_ws_parse_control_response(
+        "{\"error\":{\"msg\":\"Bad payload\"},\"id\":10}", &response));
   assert(!bnb_ws_parse_control_response("{\"data\":{\"e\":\"kline\"}}", &response));
   assert(!bnb_ws_parse_control_response("not-json", &response));
 }

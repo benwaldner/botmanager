@@ -76,15 +76,6 @@ bnb_json_get_optional_str(struct json_object *obj, const char *key,
   return(true);
 }
 
-static int64_t
-bnb_json_get_i64(struct json_object *obj, const char *key)
-{
-  struct json_object *value = NULL;
-  if(!bnb_json_get_obj(obj, key, &value))
-    return(0);
-  return((int64_t)json_object_get_int64(value));
-}
-
 static bool
 bnb_json_get_required_u32(struct json_object *obj, const char *key,
     uint32_t *out)
@@ -104,6 +95,28 @@ bnb_json_get_required_u32(struct json_object *obj, const char *key,
     return(false);
 
   *out = (uint32_t)raw;
+  return(true);
+}
+
+static bool
+bnb_json_get_required_i32(struct json_object *obj, const char *key,
+    int32_t *out)
+{
+  struct json_object *value = NULL;
+  int64_t raw;
+
+  if(obj == NULL || key == NULL || out == NULL)
+    return(false);
+  if(!bnb_json_get_obj(obj, key, &value))
+    return(false);
+  if(json_object_get_type(value) != json_type_int)
+    return(false);
+
+  raw = json_object_get_int64(value);
+  if(raw < INT32_MIN || raw > INT32_MAX)
+    return(false);
+
+  *out = (int32_t)raw;
   return(true);
 }
 
@@ -417,7 +430,11 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   if(bnb_json_get_obj(root, "error", &error))
   {
     out->kind = BNB_WS_CONTROL_ERROR;
-    out->code = (int32_t)bnb_json_get_i64(error, "code");
+    if(!bnb_json_get_required_i32(error, "code", &out->code))
+    {
+      json_object_put(root);
+      return(false);
+    }
     bnb_json_copy_str(out->msg, sizeof(out->msg), error, "msg");
     json_object_put(root);
     return(true);
@@ -426,7 +443,11 @@ bnb_ws_parse_control_response(const char *frame, bnb_ws_control_response_t *out)
   if(bnb_json_get_obj(root, "code", &value))
   {
     out->kind = BNB_WS_CONTROL_ERROR;
-    out->code = (int32_t)json_object_get_int64(value);
+    if(!bnb_json_get_required_i32(root, "code", &out->code))
+    {
+      json_object_put(root);
+      return(false);
+    }
     bnb_json_copy_str(out->msg, sizeof(out->msg), root, "msg");
     json_object_put(root);
     return(true);
