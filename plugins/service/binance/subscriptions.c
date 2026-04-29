@@ -350,3 +350,26 @@ bnb_subscription_table_build_unsubscribe_payload(
   return(bnb_ws_build_unsubscribe_payload(symbol_ptrs, count, interval, request_id,
         out, out_sz));
 }
+
+bool
+bnb_subscription_table_build_combined_stream_url(
+    const bnb_subscription_table_t *table, const char *base_url,
+    const char *interval, char *out, size_t out_sz)
+{
+  char symbols[BNB_MAX_SYMBOLS][BNB_SYMBOL_SZ];
+  const char *symbol_ptrs[BNB_MAX_SYMBOLS];
+  uint32_t i;
+  uint32_t count;
+
+  if(table == NULL || out == NULL || out_sz == 0)
+    return(false);
+
+  count = bnb_subscription_table_snapshot(table, symbols, BNB_MAX_SYMBOLS);
+  for(i = 0; i < count; i++)
+    symbol_ptrs[i] = symbols[i];
+
+  if(count == 0)
+    return(false);
+  return(bnb_ws_build_combined_stream_url(base_url, symbol_ptrs, count, interval,
+        out, out_sz));
+}
