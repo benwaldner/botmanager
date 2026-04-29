@@ -208,6 +208,29 @@ test_rejects_invalid_kline_time_window(void)
 }
 
 static void
+test_rejects_non_integer_kline_timestamps(void)
+{
+  const char *string_open_time =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":\"1777429800000\",\"T\":1777430099999,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  const char *double_close_time =
+    "{"
+    "\"data\":{\"e\":\"kline\",\"s\":\"SOLUSDT\","
+      "\"k\":{\"t\":1777429800000,\"T\":1777430099999.5,\"s\":\"SOLUSDT\","
+      "\"i\":\"5m\",\"o\":\"1\",\"c\":\"1\",\"h\":\"1\",\"l\":\"1\","
+      "\"v\":\"1\",\"n\":1,\"x\":true,\"q\":\"1\"}}"
+    "}";
+  bnb_bar_t bar;
+
+  assert(!bnb_ws_parse_kline_frame(string_open_time, &bar, NULL, 0));
+  assert(!bnb_ws_parse_kline_frame(double_close_time, &bar, NULL, 0));
+}
+
+static void
 test_rejects_unsupported_kline_interval(void)
 {
   const char *frame =
@@ -464,6 +487,7 @@ main(void)
   test_rejects_non_string_kline_metadata();
   test_rejects_invalid_ohlc_kline_frame();
   test_rejects_invalid_kline_time_window();
+  test_rejects_non_integer_kline_timestamps();
   test_rejects_unsupported_kline_interval();
   test_validates_kline_finalized_flag();
   test_validates_kline_trade_count();
