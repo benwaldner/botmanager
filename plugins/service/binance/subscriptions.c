@@ -194,6 +194,60 @@ bnb_subscription_table_count(const bnb_subscription_table_t *table)
 }
 
 bool
+bnb_subscription_table_update_bar(bnb_subscription_table_t *table,
+    const bnb_bar_t *bar)
+{
+  int idx;
+
+  if(table == NULL || bar == NULL || bar->symbol[0] == '\0')
+    return(false);
+
+  pthread_rwlock_rdlock(&table->rwl);
+  idx = bnb_find_slot_locked(table, bar->symbol);
+  if(idx < 0)
+  {
+    pthread_rwlock_unlock(&table->rwl);
+    return(false);
+  }
+
+  pthread_mutex_lock(&table->subs[idx].mu);
+  table->subs[idx].current_bar = *bar;
+  pthread_mutex_unlock(&table->subs[idx].mu);
+  pthread_rwlock_unlock(&table->rwl);
+  return(true);
+}
+
+bool
+bnb_subscription_table_get_bar(const bnb_subscription_table_t *table,
+    const char *symbol, bnb_bar_t *out)
+{
+  char normalized[BNB_SYMBOL_SZ];
+  bnb_subscription_table_t *mutable_table = (bnb_subscription_table_t *)table;
+  int idx;
+
+  if(table == NULL || out == NULL)
+    return(false);
+
+  bnb_symbol_upper(normalized, sizeof(normalized), symbol);
+  if(!bnb_symbol_valid(normalized))
+    return(false);
+
+  pthread_rwlock_rdlock(&mutable_table->rwl);
+  idx = bnb_find_slot_locked(table, normalized);
+  if(idx < 0)
+  {
+    pthread_rwlock_unlock(&mutable_table->rwl);
+    return(false);
+  }
+
+  pthread_mutex_lock(&mutable_table->subs[idx].mu);
+  *out = mutable_table->subs[idx].current_bar;
+  pthread_mutex_unlock(&mutable_table->subs[idx].mu);
+  pthread_rwlock_unlock(&mutable_table->rwl);
+  return(out->symbol[0] != '\0');
+}
+
+bool
 bnb_subscription_table_build_subscribe_payload(
     const bnb_subscription_table_t *table, const char *interval,
     uint32_t request_id, char *out, size_t out_sz)

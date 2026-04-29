@@ -133,9 +133,16 @@ bool bnb_subscription_table_add(bnb_subscription_table_t *table, const char *sym
 bool bnb_subscription_table_remove(bnb_subscription_table_t *table, const char *symbol);
 bool bnb_subscription_table_contains(const bnb_subscription_table_t *table, const char *symbol);
 uint32_t bnb_subscription_table_count(const bnb_subscription_table_t *table);
+bool bnb_subscription_table_update_bar(bnb_subscription_table_t *table,
+    const bnb_bar_t *bar);
+bool bnb_subscription_table_get_bar(const bnb_subscription_table_t *table,
+    const char *symbol, bnb_bar_t *out);
 bool bnb_subscription_table_build_subscribe_payload(
     const bnb_subscription_table_t *table, const char *interval,
     uint32_t request_id, char *out, size_t out_sz);
+bool bnb_market_data_apply_kline_frame(bnb_subscription_table_t *table,
+    bnb_bar_cache_t *cache, const char *frame, const char *expected_interval,
+    bnb_bar_t *out);
 
 #endif // BNB_INTERNAL
 
