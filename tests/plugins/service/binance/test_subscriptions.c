@@ -76,6 +76,33 @@ test_build_payload_snapshot(void)
 }
 
 static void
+test_build_connection_plan(void)
+{
+  bnb_subscription_table_t table;
+  bnb_ws_connection_plan_t plan;
+
+  bnb_subscription_table_init(&table);
+  assert(!bnb_ws_build_connection_plan(&table, BNB_WS_BASE, 300, 77, &plan));
+
+  assert(bnb_subscription_table_add(&table, "BTCUSDT"));
+  assert(bnb_subscription_table_add(&table, "ETHUSDT"));
+  assert(!bnb_ws_build_connection_plan(&table, BNB_WS_BASE, 120, 77, &plan));
+  assert(bnb_ws_build_connection_plan(&table, BNB_WS_BASE, 300, 77, &plan));
+
+  assert(strcmp(plan.interval, "5m") == 0);
+  assert(plan.symbol_count == 2);
+  assert(plan.request_id == 77);
+  assert(strstr(plan.url, BNB_WS_BASE "?streams=") == plan.url);
+  assert(strstr(plan.url, "btcusdt@kline_5m/ethusdt@kline_5m") != NULL);
+  assert(strstr(plan.subscribe_payload, "\"method\":\"SUBSCRIBE\"") != NULL);
+  assert(strstr(plan.subscribe_payload, "\"btcusdt@kline_5m\"") != NULL);
+  assert(strstr(plan.subscribe_payload, "\"ethusdt@kline_5m\"") != NULL);
+  assert(strstr(plan.subscribe_payload, "\"id\":77") != NULL);
+
+  bnb_subscription_table_destroy(&table);
+}
+
+static void
 test_add_csv_normalizes_and_deduplicates(void)
 {
   bnb_subscription_table_t table;
@@ -112,6 +139,7 @@ main(void)
 {
   test_add_contains_remove();
   test_build_payload_snapshot();
+  test_build_connection_plan();
   test_add_csv_normalizes_and_deduplicates();
   puts("test_subscriptions: ok");
   return(0);
