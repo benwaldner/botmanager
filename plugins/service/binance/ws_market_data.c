@@ -296,10 +296,13 @@ bnb_ws_parse_kline_frame(const char *frame, bnb_bar_t *out,
     return(false);
   }
 
-  if(json_object_object_get_ex(root, "stream", &stream_obj)
-      && stream_obj != NULL
-      && json_object_get_type(stream_obj) == json_type_string)
+  if(json_object_object_get_ex(root, "stream", &stream_obj))
   {
+    if(stream_obj == NULL || json_object_get_type(stream_obj) != json_type_string)
+    {
+      json_object_put(root);
+      return(false);
+    }
     if(!bnb_ws_parse_stream_name(json_object_get_string(stream_obj),
           stream_symbol, sizeof(stream_symbol),
           stream_interval, sizeof(stream_interval))
