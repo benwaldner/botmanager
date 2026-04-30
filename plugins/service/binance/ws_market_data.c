@@ -726,6 +726,7 @@ bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz)
   if(out == NULL || out_sz == 0)
     return(false);
 
+  out[0] = '\0';
   for(i = 0; i < sizeof(bnb_supported_intervals) / sizeof(bnb_supported_intervals[0]); i++)
   {
     if(bnb_supported_intervals[i].seconds == bar_seconds)
@@ -735,13 +736,15 @@ bnb_interval_from_bar_seconds(uint32_t bar_seconds, char *out, size_t out_sz)
     }
   }
   if(interval == NULL)
+    return(false);
+
+  n = snprintf(out, out_sz, "%s", interval);
+  if(n <= 0 || (size_t)n >= out_sz)
   {
     out[0] = '\0';
     return(false);
   }
-
-  n = snprintf(out, out_sz, "%s", interval);
-  return(n > 0 && (size_t)n < out_sz);
+  return(true);
 }
 
 static bool
