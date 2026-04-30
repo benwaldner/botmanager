@@ -615,18 +615,47 @@ test_parse_stream_name(void)
   assert(strcmp(symbol, "BTCUSDT") == 0);
   assert(strcmp(interval, "1h") == 0);
 
+  snprintf(symbol, sizeof(symbol), "%s", "STALE");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("@kline_5m",
         symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(symbol[0] == '\0');
+  assert(interval[0] == '\0');
+
+  snprintf(symbol, sizeof(symbol), "%s", "STALE");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("bad/symbol@kline_5m",
         symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(symbol[0] == '\0');
+  assert(interval[0] == '\0');
+
+  snprintf(symbol, sizeof(symbol), "%s", "STALE");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("solusdt@ticker",
         symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(symbol[0] == '\0');
+  assert(interval[0] == '\0');
+
+  snprintf(symbol, sizeof(symbol), "%s", "STALE");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("solusdt@kline_",
         symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(symbol[0] == '\0');
+  assert(interval[0] == '\0');
+
+  snprintf(symbol, sizeof(symbol), "%s", "STALE");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("solusdt@kline_2m",
         symbol, sizeof(symbol), interval, sizeof(interval)));
+  assert(symbol[0] == '\0');
+  assert(interval[0] == '\0');
+
+  snprintf(tiny_symbol, sizeof(tiny_symbol), "%s", "old");
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_ws_parse_stream_name("solusdt@kline_5m",
         tiny_symbol, sizeof(tiny_symbol), interval, sizeof(interval)));
+  assert(tiny_symbol[0] == '\0');
+  assert(interval[0] == '\0');
 }
 
 static void
