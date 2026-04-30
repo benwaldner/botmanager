@@ -155,6 +155,9 @@ botlist_cb(const char *name, const char *driver_name,
     const char *userns_name, uint64_t cmd_count, time_t last_activity,
     void *data)
 {
+  (void)cmd_count;
+  (void)last_activity;
+
   botlist_state_t *st = data;
   char line[256];
 

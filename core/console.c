@@ -606,6 +606,8 @@ con_comp_bot_cb(const char *name, const char *driver_name,
   (void)method_count;
   (void)session_count;
   (void)userns_name;
+  (void)cmd_count;
+  (void)last_activity;
 
   con_bot_match_t *m = data;
 
