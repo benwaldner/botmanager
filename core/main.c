@@ -306,7 +306,7 @@ main(int argc, char *argv[])
 
     if(bs.instances == 0)
     {
-      clam(CLAM_INFO, "main", "");
+      clam(CLAM_INFO, "main", " ");
       clam(CLAM_INFO, "main",
           "Welcome to BotManager. No bot instances are configured.");
       clam(CLAM_INFO, "main",
@@ -316,7 +316,7 @@ main(int argc, char *argv[])
       clam(CLAM_INFO, "main", "  /set      — set a configuration value");
       clam(CLAM_INFO, "main", "  /status   — system health dashboard");
       clam(CLAM_INFO, "main", "  /quit     — graceful shutdown");
-      clam(CLAM_INFO, "main", "");
+      clam(CLAM_INFO, "main", " ");
     }
   }
 
