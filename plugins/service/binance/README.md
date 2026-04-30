@@ -57,8 +57,8 @@ Supported `bar_seconds` mappings are intentionally explicit:
 | `259200` | `3d` |
 | `604800` | `1w` |
 
-Unsupported intervals fail closed in both configuration-derived planning and
-raw public WebSocket parser/build helpers.
+Unsupported intervals and too-small interval output buffers fail closed in both
+configuration-derived planning and raw public WebSocket parser/build helpers.
 
 ## Admin commands
 
@@ -77,7 +77,7 @@ plans. They do not contact Binance.
 
 The focused Binance tests cover:
 
-- public kline frame parsing, root/data/k-object/event/open/close integer-timestamp/symbol/string-field/finite-OHLCV/trade-count/finalized-flag validation, supported-interval validation, data/kline symbol validation, stream parser/builder symbol validation and fail-closed output behavior, fail-closed URL/payload builder output behavior, and combined-stream type/symbol/interval mismatch rejection;
+- public kline frame parsing, root/data/k-object/event/open/close integer-timestamp/symbol/string-field/finite-OHLCV/trade-count/finalized-flag validation, supported-interval validation/fail-closed output behavior, data/kline symbol validation, stream parser/builder symbol validation and fail-closed output behavior, fail-closed URL/payload builder output behavior, and combined-stream type/symbol/interval mismatch rejection;
 - finalized bar cache upsert/get behavior;
 - subscription add/remove/snapshot behavior;
 - subscribe/unsubscribe/list payload builders;

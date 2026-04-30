@@ -691,7 +691,11 @@ test_interval_from_bar_seconds(void)
   assert(strcmp(interval, "3d") == 0);
   assert(bnb_interval_from_bar_seconds(604800, interval, sizeof(interval)));
   assert(strcmp(interval, "1w") == 0);
+  snprintf(interval, sizeof(interval), "%s", "stale");
   assert(!bnb_interval_from_bar_seconds(120, interval, sizeof(interval)));
+  assert(interval[0] == '\0');
+  snprintf(interval, sizeof(interval), "%s", "stale");
+  assert(!bnb_interval_from_bar_seconds(604800, interval, 2));
   assert(interval[0] == '\0');
 }
 
