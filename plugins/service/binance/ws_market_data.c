@@ -610,40 +610,50 @@ bnb_ws_parse_stream_name(const char *stream, char *symbol, size_t symbol_sz,
   size_t i;
   int n;
 
+  if(symbol != NULL && symbol_sz > 0)
+    symbol[0] = '\0';
+  if(interval != NULL && interval_sz > 0)
+    interval[0] = '\0';
+
   if(stream == NULL || symbol == NULL || symbol_sz == 0
       || interval == NULL || interval_sz == 0)
     return(false);
 
-  symbol[0] = '\0';
-  interval[0] = '\0';
   pos = strstr(stream, marker);
   if(pos == NULL || pos == stream)
-    return(false);
+    goto fail;
 
   symbol_len = (size_t)(pos - stream);
   if(symbol_len + 1 > symbol_sz)
-    return(false);
+    goto fail;
   for(i = 0; i < symbol_len; i++)
   {
     if(!isalnum((unsigned char)stream[i]))
-      return(false);
+      goto fail;
     symbol[i] = (char)toupper((unsigned char)stream[i]);
   }
   symbol[symbol_len] = '\0';
 
   src_interval = pos + strlen(marker);
   if(src_interval[0] == '\0')
-    return(false);
+    goto fail;
   for(i = 0; src_interval[i] != '\0'; i++)
   {
     if(!isalnum((unsigned char)src_interval[i]))
-      return(false);
+      goto fail;
   }
   if(!bnb_interval_is_supported_str(src_interval))
-    return(false);
+    goto fail;
 
   n = snprintf(interval, interval_sz, "%s", src_interval);
-  return(n > 0 && (size_t)n < interval_sz);
+  if(n <= 0 || (size_t)n >= interval_sz)
+    goto fail;
+  return(true);
+
+fail:
+  symbol[0] = '\0';
+  interval[0] = '\0';
+  return(false);
 }
 
 // Build a Binance combined-stream URL such as:
