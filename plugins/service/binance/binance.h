@@ -3,7 +3,7 @@
 
 // No exported C API — this plugin is loaded via dlopen and interacts
 // with the core through plugin lifecycle hooks and commands. All
-// declarations here are internal to the market-data-only Binance plugin.
+// declarations here are internal to the Binance plugin.
 
 #ifdef BNB_INTERNAL
 
