@@ -1,6 +1,7 @@
 subdir('db/postgresql')
 subdir('method/irc')
 subdir('bot/command')
+subdir('bot/score_pump_v3')
 subdir('service/openweather')
 subdir('service/coinmarketcap')
 subdir('service/binance')
