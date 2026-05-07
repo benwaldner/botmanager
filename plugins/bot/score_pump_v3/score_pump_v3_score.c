@@ -12,7 +12,6 @@
 // core symbols — compilable and testable as a standalone translation unit.
 // =======================================================================
 
-#define SPV3_INTERNAL
 #include "score_pump_v3.h"
 
 #include <math.h>
