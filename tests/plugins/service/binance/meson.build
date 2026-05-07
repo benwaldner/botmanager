@@ -37,8 +37,16 @@ test_backoff = executable('test_binance_ws_backoff',
   dependencies : [m_dep],
 )
 
+test_trading = executable('test_binance_trading',
+  'test_trading.c',
+  '../../../../plugins/service/binance/trading_sign.c',
+  include_directories : [inc_include, include_directories('../../../../plugins/service/binance')],
+  dependencies : [openssl_dep],
+)
+
 test('binance_ws_market_data', test_ws_market_data)
 test('binance_bar_cache', test_bar_cache)
 test('binance_subscriptions', test_subscriptions)
 test('binance_market_data_dispatch', test_dispatch)
 test('binance_ws_backoff', test_backoff)
+test('binance_trading', test_trading)

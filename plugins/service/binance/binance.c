@@ -41,8 +41,9 @@ static const plugin_kv_entry_t bnb_kv_schema[] = {
   // Cap on concurrent symbol subscriptions.
   { "plugin.binance.max_symbols",      KV_UINT32, "128" },
 
-  // Dry-run guard placeholder. This scaffold does not implement private
-  // execution endpoints.
+  // dry_run=1 (default): order placement is logged but no HTTP request is
+  // submitted. Set to 0 only when BINANCE_API_KEY and BINANCE_API_SECRET
+  // environment variables are present and the operator intends live trading.
   { "plugin.binance.dry_run",          KV_UINT8,  "1" },
 };
 
@@ -238,6 +239,9 @@ bnb_init(void)
   bnb_bar_cache_init(&bnb_bar_cache);
   bnb_subscription_table_init(&bnb_subscriptions);
 
+  if(!bnb_trading_init())
+    return(FAIL);
+
   if(cmd_register("binance", "binance.status",
       "binance status",
       "Show binance plugin connection status",
@@ -344,6 +348,7 @@ bnb_deinit(void)
   cmd_unregister("binance.subscriptions");
   cmd_unregister("binance.plan");
 
+  bnb_trading_deinit();
   bnb_bar_cache_destroy(&bnb_bar_cache);
   bnb_subscription_table_destroy(&bnb_subscriptions);
 

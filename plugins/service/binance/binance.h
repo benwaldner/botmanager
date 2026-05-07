@@ -38,15 +38,22 @@
 #define BNB_WS_BASE         "wss://stream.binance.com:9443/stream"
 
 // Size limits.
-#define BNB_SYMBOL_SZ       16
-#define BNB_URL_SZ          512
-#define BNB_REPLY_SZ        640
-#define BNB_MAX_SYMBOLS     128
-#define BNB_INTERVAL_SZ     16
-#define BNB_STREAM_SZ       64
-#define BNB_WS_PAYLOAD_SZ   2048
-#define BNB_CONTROL_MSG_SZ  192
-#define BNB_WS_BACKOFF_CAP_MS 60000
+#define BNB_SYMBOL_SZ            16
+#define BNB_URL_SZ               512
+#define BNB_REPLY_SZ             640
+#define BNB_MAX_SYMBOLS          128
+#define BNB_INTERVAL_SZ          16
+#define BNB_STREAM_SZ            64
+#define BNB_WS_PAYLOAD_SZ        2048
+#define BNB_CONTROL_MSG_SZ       192
+#define BNB_WS_BACKOFF_CAP_MS    60000
+
+// Trading / signing constants.
+#define BNB_APIKEY_SZ            128   // max length for API key
+#define BNB_APISECRET_SZ         128   // max length for API secret
+#define BNB_SIG_HEX_SZ           65    // 64 hex chars + NUL for HMAC-SHA256
+#define BNB_CLIENT_ORDER_ID_SZ   64    // max Binance clientOrderId
+#define BNB_SIGNED_QS_SZ         1024  // signed query string buffer
 
 // 5-minute bar size in seconds.
 #define BNB_BAR_SECONDS     300
@@ -203,6 +210,61 @@ bool bnb_ws_build_connection_plan(const bnb_subscription_table_t *table,
 bool bnb_market_data_apply_kline_frame(bnb_subscription_table_t *table,
     bnb_bar_cache_t *cache, const char *frame, const char *expected_interval,
     bnb_bar_t *out);
+
+// -----------------------------------------------------------------------
+// Signed-endpoint trading helpers (Phase 3 — trading.c)
+// -----------------------------------------------------------------------
+
+// Result delivered to order callbacks.  `raw_response` is valid for the
+// duration of the callback only; copy any needed data.
+typedef struct
+{
+  const char *symbol;
+  const char *client_order_id;
+  bool        ok;
+  int         http_status;
+  const char *raw_response;
+} bnb_order_result_t;
+
+typedef void (*bnb_order_cb_t)(const bnb_order_result_t *result, void *user_data);
+
+// Result delivered to account-query callbacks.
+typedef struct
+{
+  bool        ok;
+  int         http_status;
+  const char *raw_response;
+} bnb_account_result_t;
+
+typedef void (*bnb_account_cb_t)(const bnb_account_result_t *result, void *user_data);
+
+// HMAC-SHA256 of msg under secret, written as 64 lowercase hex chars + NUL.
+// out_sz must be >= BNB_SIG_HEX_SZ (65).  Pure function — no module state.
+bool bnb_hmac_sha256_hex(const char *secret, size_t secret_len,
+                         const char *msg,    size_t msg_len,
+                         char *out,          size_t out_sz);
+
+// Build a Binance signed query string: base_params + timestamp + recvWindow
+// + signature.  Pass now_ms=0 to use the current wall clock.
+// Returns bytes written (excl. NUL), or 0 on failure.
+size_t bnb_build_signed_query(const char *base_params, const char *secret,
+                              int64_t now_ms, char *out, size_t out_sz);
+
+// Async MARKET SELL.  Honouring dry_run KV flag.
+bool bnb_order_market_sell(const char *symbol, double qty,
+                           const char *client_order_id,
+                           bnb_order_cb_t cb, void *user_data);
+
+// Async order cancel by clientOrderId.  Honoring dry_run KV flag.
+bool bnb_order_cancel(const char *symbol, const char *client_order_id,
+                      bnb_order_cb_t cb, void *user_data);
+
+// Async signed GET /api/v3/account.  Honoring dry_run KV flag.
+bool bnb_account_query(bnb_account_cb_t cb, void *user_data);
+
+// Lifecycle — must be called from bnb_init() / bnb_deinit().
+bool bnb_trading_init(void);
+void bnb_trading_deinit(void);
 
 #endif // BNB_INTERNAL
 
