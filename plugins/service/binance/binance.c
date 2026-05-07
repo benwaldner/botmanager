@@ -1,13 +1,11 @@
 // =======================================================================
-// Binance service plugin (market-data scaffold — Phase 2b).
+// Binance service plugin.
 //
 // Provides:
 //   - Public Binance Spot market-data plumbing.
 //   - Public kline stream parsing and finalized OHLCV cache helpers.
 //   - Symbol subscription payload preparation.
-//
-// This file intentionally does not implement private/signed endpoints,
-// account state, or order placement.
+//   - Dry-run guarded signed-endpoint helper functions.
 //
 // Modeled on plugins/service/coinmarketcap/coinmarketcap.c.
 // =======================================================================
@@ -74,7 +72,7 @@ bnb_cmd_status(const cmd_ctx_t *ctx)
   uint32_t count = bnb_subscription_table_count(&bnb_subscriptions);
 
   snprintf(buf, sizeof(buf),
-      "binance: subs=%u cache=%u dry_run=%u ws=%s market-data-only",
+      "binance: subs=%u cache=%u dry_run=%u ws=%s signed-endpoints guarded",
       count, bnb_bar_cache_count(&bnb_bar_cache), dry,
       bnb_ws_task != NULL ? "running" : "stopped");
 
@@ -308,8 +306,8 @@ bnb_init(void)
   symbols_csv = kv_get_str("plugin.binance.symbols");
   default_subs = bnb_subscription_table_add_csv(&bnb_subscriptions, symbols_csv);
 
-  clam(CLAM_INFO, BNB_CTX, "binance plugin initialized (market-data-only subs=%u)",
-      default_subs);
+  clam(CLAM_INFO, BNB_CTX, "binance plugin initialized (subs=%u, signed dry_run=%u)",
+      default_subs, (unsigned)kv_get_uint("plugin.binance.dry_run"));
 
   return(SUCCESS);
 }

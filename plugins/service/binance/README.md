@@ -1,27 +1,30 @@
-# Binance Public Market-Data Scaffold
+# Binance Service Plugin
 
-This plugin is a market-data-only Binance Spot scaffold. It prepares and
-parses public kline WebSocket data for BotManager, but it does not enable
-trading or private account access.
+This plugin prepares and parses public Binance Spot kline WebSocket data for
+BotManager. It also contains dry-run guarded signed-endpoint helper functions
+for later trading integration.
 
 ## Safety boundaries
 
-- No order placement.
-- No account-state reads.
-- No private or signed Binance endpoints.
-- No API keys, signatures, HMACs, or credential handling.
-- No live-trading router integration.
+- `plugin.binance.dry_run=1` by default: signed order/account helpers log and
+  skip network requests unless an operator explicitly disables dry run.
+- Live signed helpers require both `BINANCE_API_KEY` and `BINANCE_API_SECRET`.
+- Signed helpers reject overlong credentials, invalid symbols, and unsupported
+  client order id characters before building requests.
+- Order cancel uses Binance `DELETE /api/v3/order`, not the order-create POST.
+- The signed REST base follows `plugin.binance.rest_base`, so operators can
+  point dry-run or test deployments at a non-production base before enabling
+  anything live.
+- No live-trading router integration is implemented.
 - No socket loop is started by the current scaffold.
 
-The only Binance paths represented here are public market-data helpers for
+The active admin command surface remains public market-data only. It covers
 kline stream names, combined-stream wrapper type and symbol-consistency
 validation, fail-closed root/data/k object, event/open/close integer-timestamp,
-symbol/string-field, finite OHLCV, trade-count,
-and finalized-flag validation, subscribe/unsubscribe payloads, control response
-root-object/id/error-code/error-message/result-list stream parsing,
-supported-interval validation, combined stream URLs, in-memory subscription
-state, fail-closed builder outputs, finalized bar cache, and offline reconnect
-backoff calculation.
+symbol/string-field, finite OHLCV, trade-count and finalized-flag validation,
+subscribe/unsubscribe payloads, control response parsing, supported intervals,
+combined stream URLs, in-memory subscription state, fail-closed builder outputs,
+finalized bar cache, and offline reconnect backoff calculation.
 
 ## Configuration
 
@@ -36,7 +39,7 @@ The plugin registers these KV defaults:
 | `plugin.binance.ws_backoff_ms` | `1000` | Base reconnect backoff in milliseconds. |
 | `plugin.binance.ws_backoff_cap_ms` | `60000` | Reconnect backoff cap in milliseconds. |
 | `plugin.binance.max_symbols` | `128` | Symbol-cap placeholder for public subscriptions. |
-| `plugin.binance.dry_run` | `1` | Guard placeholder; private execution is not implemented. |
+| `plugin.binance.dry_run` | `1` | Guard for signed helpers. `1` logs/skips network requests; `0` requires explicit credentials and operator intent. |
 
 Supported `bar_seconds` mappings are intentionally explicit:
 
@@ -85,7 +88,8 @@ The focused Binance tests cover:
 - combined stream URL builders;
 - offline connection-plan composition;
 - market-data dispatch into subscription and cache state;
-- deterministic capped reconnect backoff.
+- deterministic capped reconnect backoff;
+- offline HMAC-SHA256 signing and signed-query construction.
 
 Run:
 
@@ -99,15 +103,14 @@ meson test -C build
 
 This scaffold does not implement:
 
-- live trading;
-- broker or exchange execution;
-- private Binance REST/WebSocket APIs;
-- account balances or positions;
-- order signing or cancellation;
+- broker/router integration;
+- live-trading deployment;
+- private Binance WebSocket APIs;
+- account balance parsing or position accounting;
 - strategy selection;
 - persistence;
 - runtime deployment of a WebSocket pump.
 
-Those capabilities require separate design, review, rate-limit coordination,
-secrets handling, audit logging, and explicit authorization before they should
-exist in this codebase.
+Live execution still requires separate design, review, global Binance rate-limit
+coordination, secrets handling, audit logging, and explicit authorization before
+any strategy should call these helpers with dry run disabled.
