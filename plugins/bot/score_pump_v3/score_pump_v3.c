@@ -1,10 +1,10 @@
 // =======================================================================
 // score_pump_v3 bot plugin — v3 pump-score trading strategy.
 //
-// Runs a periodic 5-minute scoring tick that reads bar data from its
-// internal per-symbol rolling history, computes MOM-24 + RVOL scores,
-// and (when dry_run=0) submits MARKET BUY orders for the top-N symbols
-// via the Binance trading helpers.
+// Provides MOM-24 + RVOL scoring over an internal per-symbol rolling
+// history. The active periodic/live-order loop remains dormant until
+// BotManager exposes cancellable per-instance tasks and a cross-plugin
+// bar-cache interface.
 //
 // This plugin requires "service_binance" — data is fed via admin commands
 // or future service plugin integration. The periodic task is a scaffold:
@@ -101,6 +101,11 @@ spv3_kv_double(const char *key, double fallback)
 static void
 spv3_tick(task_t *t)
 {
+  if(t == NULL)
+    return;
+
+  t->state = TASK_ENDED;
+
   spv3_state_t *st = (spv3_state_t *)t->data;
   if(!st)
     return;
@@ -176,8 +181,8 @@ spv3_tick(task_t *t)
       st->entries_dry++;
       // dry_run: log intent, skip order placement.
     }
-    // Live execution: delegate to trading.c bnb_order_market_sell().
-    // (Not wired here — trading.c belongs to the binance service plugin.)
+    // Live execution is intentionally not wired in this plugin yet.
+    // Future order delegation must go through the guarded Binance service API.
   }
 }
 
@@ -213,15 +218,12 @@ spv3_start(void *handle)
   if(tick_ms < 1000)
     tick_ms = 300000;  // default 5 minutes
 
-  st->tick_task = task_add_periodic(SPV3_CTX, TASK_THREAD, 2, tick_ms,
-                                    spv3_tick, st);
-  if(!st->tick_task)
-  {
-    clam(CLAM_WARN, SPV3_CTX, "failed to create periodic tick task");
-    return(FAIL);
-  }
+  (void)spv3_tick;
 
-  clam(CLAM_INFO, SPV3_CTX, "started (tick_ms=%u)", tick_ms);
+  st->tick_task = NULL;
+  clam(CLAM_INFO, SPV3_CTX,
+       "started dormant (tick_ms=%u, periodic task disabled until cancellable tasks/bar-cache API)",
+       tick_ms);
   return(SUCCESS);
 }
 
@@ -231,7 +233,6 @@ spv3_stop(void *handle)
   spv3_state_t *st = (spv3_state_t *)handle;
   if(!st)
     return;
-  // task_cancel(st->tick_task);  — cancel when API is available
   st->tick_task = NULL;
   clam(CLAM_INFO, SPV3_CTX, "stopped (ticks=%llu entries_dry=%llu)",
        (unsigned long long)st->ticks,
